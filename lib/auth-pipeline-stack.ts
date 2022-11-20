@@ -254,32 +254,26 @@ export class AuthEcsAppStack extends cdk.Stack {
             maxAzs: 2,
         })
 
-        // const taskDefinition = new ecs.TaskDefinition(this, 'Auth-TaskDefinition', {
-        //     compatibility: ecs.Compatibility.FARGATE,
-        //     cpu: '256',
-        //     memoryMiB: '512',
-        // });
-        // taskDefinition.addContainer('AppContainer', {
-        //     containerName: "auth-container",
-        //     image: props.image,
-        //     portMappings: [
-        //         { containerPort: 8080 }
-        //     ]
-        // });
+        const taskDefinition = new ecs.TaskDefinition(this, 'Auth-TaskDefinition', {
+            compatibility: ecs.Compatibility.FARGATE,
+            cpu: '512',
+            memoryMiB: '1024',
+        });
+        taskDefinition.addContainer('AppContainer', {
+            containerName: "auth-container",
+            image: props.image,
+            portMappings: [
+                { containerPort: 8080 }
+            ]
+        });
 
         const service = new ecs_patterns.NetworkLoadBalancedFargateService(this, 'EcsService', {
             serviceName:"Auth-Fargate",
-            cpu: 256,
-            memoryLimitMiB: 512,
+            taskDefinition,
             cluster: new ecs.Cluster(this, 'Cluster', {
                 clusterName:"auth-cluster",
                 vpc: vpc,
             }),
-            taskImageOptions:{
-                containerName: "auth-container",
-                image: props.image,
-                containerPort:8080
-            }
         });
 
 
