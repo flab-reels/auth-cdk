@@ -6,12 +6,10 @@ import * as codepipeline_actions from 'aws-cdk-lib/aws-codepipeline-actions';
 import * as codebuild from 'aws-cdk-lib/aws-codebuild';
 import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
+import {Protocol} from 'aws-cdk-lib/aws-ecs';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as ec2 from 'aws-cdk-lib/aws-ec2'
 import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2'
-import * as ecs_patterns from 'aws-cdk-lib/aws-ecs-patterns'
-
-
 
 export class AuthPipelineStack extends cdk.Stack {
     public readonly tagParameterContainerImage: ecs.TagParameterContainerImage;
@@ -262,12 +260,16 @@ export class AuthEcsAppStack extends cdk.Stack {
         taskDefinition.addContainer('AppContainer', {
             containerName: "auth-container",
             image: props.image,
+
             portMappings: [
-                { containerPort: 8080 }
+                {
+                    containerPort: 8080,
+
+                }
             ]
         });
 
-        const service = new ecs_patterns.NetworkLoadBalancedFargateService(this, 'EcsService', {
+        const service = new ecs.FargateService(this, 'EcsService', {
             serviceName:"Auth-Fargate",
             taskDefinition,
             cluster: new ecs.Cluster(this, 'Cluster', {
@@ -276,7 +278,15 @@ export class AuthEcsAppStack extends cdk.Stack {
             }),
         });
 
+        const lb = new elbv2.NetworkLoadBalancer(this, 'nlb', { vpc });
 
+
+        const listener = lb.addListener('auth-service-listener', { port: 1122 });
+        listener.addTargets('auth-service-target', {
+            targetGroupName: 'auth-service-target',
+            port: 1133,
+            targets: [service]
+        });
 
 
     }
