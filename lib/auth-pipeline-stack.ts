@@ -152,10 +152,7 @@ export class AuthPipelineStack extends cdk.Stack {
 
         new codepipeline.Pipeline(this, 'auth-code-pipeline', {
             pipelineName:"auth-pipeline",
-            artifactBucket: new s3.Bucket(this, 'ArtifactBucket', {
-                bucketName:"auth-pipeline-bucket",
-                removalPolicy: cdk.RemovalPolicy.DESTROY,
-            }),
+
             stages: [
                 {
                     stageName: 'Source',
@@ -249,24 +246,31 @@ export class AuthEcsAppStack extends cdk.Stack {
         super(scope, id, props);
 
 
-        const taskDefinition = new ecs.TaskDefinition(this, 'TaskDefinition', {
-
-            compatibility: ecs.Compatibility.FARGATE,
-            cpu: '1024',
-            memoryMiB: '2048',
-        });
-        taskDefinition.addContainer('AppContainer', {
-            containerName: "auth-container",
-            image: props.image,
-        });
-        new ecs.FargateService(this, 'EcsService', {
+        // const taskDefinition = new ecs.TaskDefinition(this, 'TaskDefinition', {
+        //
+        //     compatibility: ecs.Compatibility.FARGATE,
+        //     cpu: '1024',
+        //     memoryMiB: '512',
+        // });
+        // taskDefinition.addContainer('AppContainer', {
+        //     containerName: "auth-container",
+        //     image: props.image,
+        //
+        // });
+        new aws_ecs_patterns.NetworkLoadBalancedFargateService(this, 'EcsService', {
             serviceName:"auth-ecs-service",
-            taskDefinition,
+            memoryLimitMiB: 1024,
+            cpu: 512,
             cluster: new ecs.Cluster(this, 'Cluster', {
                 vpc: new ec2.Vpc(this, 'Vpc', {
                     maxAzs: 1,
                 }),
             }),
+            taskImageOptions:{
+                image:props.image,
+                containerName: "auth-container",
+                containerPort:8080
+            }
         });
 
 
