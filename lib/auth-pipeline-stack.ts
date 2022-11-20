@@ -257,7 +257,7 @@ export class AuthEcsAppStack extends cdk.Stack {
         //     image: props.image,
         //
         // });
-        new aws_ecs_patterns.NetworkLoadBalancedFargateService(this, 'EcsService', {
+        new aws_ecs_patterns.ApplicationLoadBalancedFargateService(this, 'EcsService', {
             serviceName:"auth-ecs-service",
             memoryLimitMiB: 1024,
             cpu: 512,
