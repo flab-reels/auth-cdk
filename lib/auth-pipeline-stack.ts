@@ -263,14 +263,11 @@ export class AuthEcsAppStack extends cdk.Stack {
             image: props.image,
 
             portMappings: [
-                {
-                    containerPort: 8080,
-
-                }
+                {containerPort: 8080,}
             ]
         });
 
-        const service = new aws_ecs_patterns.NetworkLoadBalancedFargateService(this, 'EcsService', {
+        new aws_ecs_patterns.NetworkLoadBalancedFargateService(this, 'EcsService', {
             serviceName:"Auth-Fargate",
             taskDefinition,
             cluster: new ecs.Cluster(this, 'Cluster', {
@@ -280,10 +277,7 @@ export class AuthEcsAppStack extends cdk.Stack {
             listenerPort:8080
         });
 
-        service.listener.addTargets('auth-service-target', {
-            targetGroupName: 'auth-service-target',
-            port: 1133,
-        });
+
 
 
 
