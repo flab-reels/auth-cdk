@@ -267,14 +267,17 @@ export class AuthEcsAppStack extends cdk.Stack {
             ]
         });
 
-        new aws_ecs_patterns.NetworkLoadBalancedFargateService(this, 'EcsService', {
+        new aws_ecs_patterns.ApplicationLoadBalancedFargateService(this, 'EcsService', {
             serviceName:"Auth-Fargate",
             taskDefinition,
             cluster: new ecs.Cluster(this, 'Cluster', {
                 clusterName:"auth-cluster",
                 vpc: vpc,
+
             }),
-            listenerPort:8080
+            listenerPort:8080,
+            loadBalancerName:"auth-load-balancer"
+
         });
 
 
