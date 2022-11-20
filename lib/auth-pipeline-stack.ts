@@ -248,62 +248,25 @@ export class AuthEcsAppStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props: EcsAppStackProps) {
         super(scope, id, props);
 
-        const vpc = new ec2.Vpc(this, 'Vpc', {
-            vpcName:"auth-vpc",
-            maxAzs: 2,
-        })
 
-        const taskDefinition = new ecs.TaskDefinition(this, 'Auth-TaskDefinition', {
+        const taskDefinition = new ecs.TaskDefinition(this, 'TaskDefinition', {
+
             compatibility: ecs.Compatibility.FARGATE,
-            cpu: '512',
-            memoryMiB: '1024',
+            cpu: '1024',
+            memoryMiB: '2048',
         });
         taskDefinition.addContainer('AppContainer', {
             containerName: "auth-container",
             image: props.image,
-
-            portMappings: [
-                {containerPort: 8080,}
-            ]
         });
-
-        new aws_ecs_patterns.NetworkMultipleTargetGroupsFargateService(this, 'EcsService', {
-            serviceName:"Auth-Fargate",
-            memoryLimitMiB:512,
+        new ecs.FargateService(this, 'EcsService', {
+            serviceName:"auth-ecs-service",
             taskDefinition,
             cluster: new ecs.Cluster(this, 'Cluster', {
-                clusterName:"auth-cluster",
-                vpc: vpc,
-
+                vpc: new ec2.Vpc(this, 'Vpc', {
+                    maxAzs: 1,
+                }),
             }),
-            loadBalancers: [
-                {
-                    name: 'lb1',
-                    listeners: [
-                        {
-                            name: 'listener1',
-                        },
-                    ],
-                },
-                {
-                    name: 'lb2',
-                    listeners: [
-                        {
-                            name: 'listener2',
-                        },
-                    ],
-                },
-            ],
-            targetGroups: [
-                {
-                    containerPort: 80,
-                    listener: 'listener1',
-                },
-                {
-                    containerPort: 90,
-                    listener: 'listener2',
-                },
-            ],
         });
 
 
