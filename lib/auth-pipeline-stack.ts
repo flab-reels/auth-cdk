@@ -1,5 +1,5 @@
 import * as cdk from 'aws-cdk-lib';
-import {SecretValue} from 'aws-cdk-lib';
+import {aws_ecs_patterns, SecretValue} from 'aws-cdk-lib';
 import {Construct} from 'constructs';
 import * as codepipeline from 'aws-cdk-lib/aws-codepipeline';
 import * as codepipeline_actions from 'aws-cdk-lib/aws-codepipeline-actions';
@@ -249,6 +249,7 @@ export class AuthEcsAppStack extends cdk.Stack {
         super(scope, id, props);
 
         const vpc = new ec2.Vpc(this, 'Vpc', {
+            vpcName:"auth-vpc",
             maxAzs: 2,
         })
 
@@ -269,24 +270,21 @@ export class AuthEcsAppStack extends cdk.Stack {
             ]
         });
 
-        const service = new ecs.FargateService(this, 'EcsService', {
+        const service = new aws_ecs_patterns.NetworkLoadBalancedFargateService(this, 'EcsService', {
             serviceName:"Auth-Fargate",
             taskDefinition,
             cluster: new ecs.Cluster(this, 'Cluster', {
                 clusterName:"auth-cluster",
                 vpc: vpc,
             }),
+            listenerPort:8080
         });
 
-        const lb = new elbv2.NetworkLoadBalancer(this, 'nlb', { vpc });
-
-
-        const listener = lb.addListener('auth-service-listener', { port: 1122 });
-        listener.addTargets('auth-service-target', {
+        service.listener.addTargets('auth-service-target', {
             targetGroupName: 'auth-service-target',
             port: 1133,
-            targets: [service]
         });
+
 
 
     }
