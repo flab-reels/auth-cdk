@@ -274,18 +274,19 @@ export class AuthEcsAppStack extends cdk.Stack {
 
         container.addPortMappings({
             containerPort:8080,
-            hostPort:8080,
+            hostPort:80,
             protocol: ecs.Protocol.TCP
         })
 
         const loadBalancer = new NetworkLoadBalancer(this, 'auth-nlb',{
             loadBalancerName:"auth-nlb",
             vpc,
-            internetFacing:false
+            internetFacing:false,
+
         })
 
         const listener = loadBalancer.addListener('auth-listener',{
-            port:8080
+            port:80
         })
 
         const secGroup = new SecurityGroup(this, 'auth-sg', {
@@ -296,11 +297,10 @@ export class AuthEcsAppStack extends cdk.Stack {
         secGroup.addIngressRule(ec2.Peer.ipv4('0.0.0.0/0'), ec2.Port.tcp(80), 'SSH frm anywhere');
         secGroup.addIngressRule(ec2.Peer.ipv4('0.0.0.0/0'), ec2.Port.tcp(8080), '');
 
-        const fargateService = new ecs.FargateService(this, 'search-api-fg-service', {
+        const fargateService = new ecs.FargateService(this, 'auth-fargate-service', {
             cluster,
             taskDefinition: taskDefinition,
-            assignPublicIp: true,
-            serviceName: "search-api-svc",
+            serviceName: 'auth-fargate-service',
             securityGroups:[
                 secGroup
             ]
@@ -327,7 +327,5 @@ export class AuthEcsAppStack extends cdk.Stack {
 
 
 
-
-        new cdk.CfnOutput(this, 'ClusterARN: ', { value: cluster.clusterArn });
     }
 }
