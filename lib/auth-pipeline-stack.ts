@@ -10,6 +10,8 @@ import {Protocol} from 'aws-cdk-lib/aws-ecs';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as ec2 from 'aws-cdk-lib/aws-ec2'
 import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2'
+import {NetworkLoadBalancer} from "aws-cdk-lib/aws-elasticloadbalancingv2";
+import { SecurityGroup } from 'aws-cdk-lib/aws-ec2';
 
 export class AuthPipelineStack extends cdk.Stack {
     public readonly tagParameterContainerImage: ecs.TagParameterContainerImage;
@@ -245,37 +247,87 @@ export class AuthEcsAppStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props: EcsAppStackProps) {
         super(scope, id, props);
 
+        const vpc = new ec2.Vpc(this, 'Vpc', {
+            vpcName:"auth-vpc",
+            maxAzs: 2,
+        })
 
-        // const taskDefinition = new ecs.TaskDefinition(this, 'TaskDefinition', {
-        //
-        //     compatibility: ecs.Compatibility.FARGATE,
-        //     cpu: '1024',
-        //     memoryMiB: '512',
-        // });
-        // taskDefinition.addContainer('AppContainer', {
-        //     containerName: "auth-container",
-        //     image: props.image,
-        //
-        // });
-        new aws_ecs_patterns.ApplicationLoadBalancedFargateService(this, 'EcsService', {
-            serviceName:"auth-ecs-service",
-            memoryLimitMiB: 1024,
-            cpu: 512,
-            cluster: new ecs.Cluster(this, 'Cluster', {
-                vpc: new ec2.Vpc(this, 'Vpc', {
-                    maxAzs: 1,
-                }),
-            }),
-            taskImageOptions:{
-                image:props.image,
-                containerName: "auth-container",
-                containerPort:8080
-            }
+        const cluster = new ecs.Cluster(this, 'Cluster', {
+            vpc,
+            clusterName:"auth-cluster"
+
+        })
+
+
+        const taskDefinition = new ecs.FargateTaskDefinition(this, 'TaskDefinition', {
+            family: 'auth-task-definition',
+            cpu: 256,
+            memoryLimitMiB: 512,
         });
 
 
+        const container = taskDefinition.addContainer('AppContainer', {
+            containerName: "auth-container",
+            image: props.image,
+
+        });
+
+        container.addPortMappings({
+            containerPort:8080,
+            hostPort:8080,
+            protocol: ecs.Protocol.TCP
+        })
+
+        const loadBalancer = new NetworkLoadBalancer(this, 'auth-nlb',{
+            loadBalancerName:"auth-nlb",
+            vpc,
+            internetFacing:false
+        })
+
+        const listener = loadBalancer.addListener('auth-listener',{
+            port:8080
+        })
+
+        const secGroup = new SecurityGroup(this, 'auth-sg', {
+            securityGroupName: "auth-sg",
+            vpc:vpc,
+            allowAllOutbound:true
+        });
+        secGroup.addIngressRule(ec2.Peer.ipv4('0.0.0.0/0'), ec2.Port.tcp(80), 'SSH frm anywhere');
+        secGroup.addIngressRule(ec2.Peer.ipv4('0.0.0.0/0'), ec2.Port.tcp(8080), '');
+
+        const fargateService = new ecs.FargateService(this, 'search-api-fg-service', {
+            cluster,
+            taskDefinition: taskDefinition,
+            assignPublicIp: true,
+            serviceName: "search-api-svc",
+            securityGroups:[
+                secGroup
+            ]
+        });
+
+        listener.addTargets('auth-tg', {
+            targetGroupName: 'auth-tg',
+            port: 8080,
+            targets: [fargateService],
+            deregistrationDelay: cdk.Duration.seconds(300)
+        });
+
+        // new aws_ecs_patterns.ApplicationLoadBalancedFargateService(this, 'EcsService', {
+        //     serviceName:"auth-ecs-service",
+        //     memoryLimitMiB: 1024,
+        //     cpu: 512,
+        //
+        //     taskImageOptions:{
+        //         image:props.image,
+        //         containerName: "auth-container",
+        //         containerPort:8080
+        //     }
+        // });
 
 
 
+
+        new cdk.CfnOutput(this, 'ClusterARN: ', { value: cluster.clusterArn });
     }
 }
