@@ -275,7 +275,6 @@ export class AuthEcsAppStack extends cdk.Stack {
 
         container.addPortMappings({
             containerPort:8080,
-            hostPort:8080,
             protocol: ecs.Protocol.TCP
         })
 
@@ -287,7 +286,7 @@ export class AuthEcsAppStack extends cdk.Stack {
         })
 
         const listener = loadBalancer.addListener('auth-listener',{
-            port:8080
+            port:80
         })
 
         const secGroup = new SecurityGroup(this, 'auth-sg', {
@@ -313,8 +312,6 @@ export class AuthEcsAppStack extends cdk.Stack {
             targets: [fargateService],
             deregistrationDelay: cdk.Duration.seconds(300)
         });
-
-
 
     }
 }
