@@ -12,6 +12,7 @@ import * as ec2 from 'aws-cdk-lib/aws-ec2'
 import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2'
 import {NetworkLoadBalancer} from "aws-cdk-lib/aws-elasticloadbalancingv2";
 import { SecurityGroup } from 'aws-cdk-lib/aws-ec2';
+import * as apigw from 'aws-cdk-lib/aws-apigateway'
 
 export class AuthPipelineStack extends cdk.Stack {
     public readonly tagParameterContainerImage: ecs.TagParameterContainerImage;
@@ -274,6 +275,7 @@ export class AuthEcsAppStack extends cdk.Stack {
 
         container.addPortMappings({
             containerPort:8080,
+            hostPort:8080,
             protocol: ecs.Protocol.TCP
         })
 
@@ -285,7 +287,7 @@ export class AuthEcsAppStack extends cdk.Stack {
         })
 
         const listener = loadBalancer.addListener('auth-listener',{
-            port:80
+            port:8080
         })
 
         const secGroup = new SecurityGroup(this, 'auth-sg', {
@@ -311,18 +313,6 @@ export class AuthEcsAppStack extends cdk.Stack {
             targets: [fargateService],
             deregistrationDelay: cdk.Duration.seconds(300)
         });
-
-        // new aws_ecs_patterns.ApplicationLoadBalancedFargateService(this, 'EcsService', {
-        //     serviceName:"auth-ecs-service",
-        //     memoryLimitMiB: 1024,
-        //     cpu: 512,
-        //
-        //     taskImageOptions:{
-        //         image:props.image,
-        //         containerName: "auth-container",
-        //         containerPort:8080
-        //     }
-        // });
 
 
 
