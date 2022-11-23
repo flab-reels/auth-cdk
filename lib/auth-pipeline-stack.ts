@@ -1,15 +1,12 @@
 import * as cdk from 'aws-cdk-lib';
-import {aws_ecs_patterns, SecretValue} from 'aws-cdk-lib';
+import {SecretValue} from 'aws-cdk-lib';
 import {Construct} from 'constructs';
 import * as codepipeline from 'aws-cdk-lib/aws-codepipeline';
 import * as codepipeline_actions from 'aws-cdk-lib/aws-codepipeline-actions';
 import * as codebuild from 'aws-cdk-lib/aws-codebuild';
 import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
-import {Protocol} from 'aws-cdk-lib/aws-ecs';
-import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as ec2 from 'aws-cdk-lib/aws-ec2'
-import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2'
 import {NetworkLoadBalancer} from "aws-cdk-lib/aws-elasticloadbalancingv2";
 import { SecurityGroup } from 'aws-cdk-lib/aws-ec2';
 import * as apigw from 'aws-cdk-lib/aws-apigateway'
@@ -113,8 +110,6 @@ export class AuthPipelineStack extends cdk.Stack {
                 version: '0.2',
                 phases: {
                     install: {
-
-
                         commands: [
                             'npm install',
                             "n 16.15.1"
@@ -137,7 +132,6 @@ export class AuthPipelineStack extends cdk.Stack {
 
 
 
-
         /** 파이프라인 세션 단계별로 구별 할수 있게 처리*/
         const appCodeSourceOutput = new codepipeline.Artifact();
         const cdkCodeSourceOutput = new codepipeline.Artifact();
@@ -149,8 +143,7 @@ export class AuthPipelineStack extends cdk.Stack {
             input: appCodeSourceOutput,
         });
 
-        const githubSourceAction = this.createAuthGithubSourceAction(appCodeSourceOutput);
-
+        const githubSourceAction = this.createAuthGithubSourceAction(appCodeSourceOutput)
         const cdkSourceAction = this.createCDKGithubSourceAction(cdkCodeSourceOutput)
 
         new codepipeline.Pipeline(this, 'auth-code-pipeline', {
@@ -236,14 +229,17 @@ export class AuthPipelineStack extends cdk.Stack {
 
 }
 
+/**
+ * 1. 위 파이프라인 스택이 끝나면 밑의 코드들은 CloudFormation 으로 돌리도록 설정함
+ * 2. 위 파이프라인 스택에서 만든 ECR Tag를 가져와서 CloudFormation 에서 CDK DEPLOY를 실행하게 함
+ * 3. 소스는 Github, CodeCommit 다 가능
+ */
 
 export interface EcsAppStackProps extends cdk.StackProps {
     readonly image: ecs.ContainerImage;
 }
 
-/**
- * This is the Stack containing a simple ECS Service that uses the provided ContainerImage.
- */
+
 export class AuthEcsAppStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props: EcsAppStackProps) {
         super(scope, id, props);
@@ -275,24 +271,24 @@ export class AuthEcsAppStack extends cdk.Stack {
 
         container.addPortMappings({
             containerPort:8080,
+            hostPort:8080,
             protocol: ecs.Protocol.TCP
         })
 
         const loadBalancer = new NetworkLoadBalancer(this, 'auth-nlb',{
             loadBalancerName:"auth-nlb",
             vpc,
-            internetFacing:false,
-
+            internetFacing : false,
         })
 
         const listener = loadBalancer.addListener('auth-listener',{
-            port:80
+            port:8080
         })
 
         const secGroup = new SecurityGroup(this, 'auth-sg', {
             securityGroupName: "auth-sg",
             vpc:vpc,
-            allowAllOutbound:true
+            allowAllOutbound:true,
         });
         secGroup.addIngressRule(ec2.Peer.ipv4('0.0.0.0/0'), ec2.Port.tcp(80), 'SSH frm anywhere');
         secGroup.addIngressRule(ec2.Peer.ipv4('0.0.0.0/0'), ec2.Port.tcp(8080), '');
