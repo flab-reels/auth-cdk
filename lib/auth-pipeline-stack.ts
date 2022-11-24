@@ -1,15 +1,14 @@
 import * as cdk from 'aws-cdk-lib';
 import {SecretValue} from 'aws-cdk-lib';
 import {Construct} from 'constructs';
-import * as codepipeline from 'aws-cdk-lib/aws-codepipeline';
-import * as codepipeline_actions from 'aws-cdk-lib/aws-codepipeline-actions';
-import * as codebuild from 'aws-cdk-lib/aws-codebuild';
-import * as ecr from 'aws-cdk-lib/aws-ecr';
-import * as ecs from 'aws-cdk-lib/aws-ecs';
+import * as codepipeline from 'aws-cdk-lib/aws-codepipeline'
+import * as codepipeline_actions from 'aws-cdk-lib/aws-codepipeline-actions'
+import * as codebuild from 'aws-cdk-lib/aws-codebuild'
+import * as ecr from 'aws-cdk-lib/aws-ecr'
+import * as ecs from 'aws-cdk-lib/aws-ecs'
 import * as ec2 from 'aws-cdk-lib/aws-ec2'
-import {NetworkLoadBalancer} from "aws-cdk-lib/aws-elasticloadbalancingv2";
-import { SecurityGroup } from 'aws-cdk-lib/aws-ec2';
-import * as apigw from 'aws-cdk-lib/aws-apigateway'
+import {SecurityGroup} from 'aws-cdk-lib/aws-ec2'
+import {NetworkLoadBalancer, Protocol} from "aws-cdk-lib/aws-elasticloadbalancingv2"
 
 export class AuthPipelineStack extends cdk.Stack {
     public readonly tagParameterContainerImage: ecs.TagParameterContainerImage;
@@ -31,11 +30,8 @@ export class AuthPipelineStack extends cdk.Stack {
             environmentVariables: {
                 REPOSITORY_URI: {
                     value: appEcrRepo.repositoryUri,
-
                 },
-
             },
-
             buildSpec: codebuild.BuildSpec.fromObject({
                 version: '0.2',
                 phases: {
@@ -246,7 +242,7 @@ export class AuthEcsAppStack extends cdk.Stack {
 
         const vpc = new ec2.Vpc(this, 'Vpc', {
             vpcName:"auth-vpc",
-            maxAzs: 2,
+            maxAzs: 1,
         })
 
         const cluster = new ecs.Cluster(this, 'Cluster', {
@@ -282,15 +278,17 @@ export class AuthEcsAppStack extends cdk.Stack {
         })
 
         const listener = loadBalancer.addListener('auth-listener',{
-            port:8080
+            port:8080,
+            protocol:Protocol.TCP
         })
 
         const secGroup = new SecurityGroup(this, 'auth-sg', {
             securityGroupName: "auth-sg",
             vpc:vpc,
             allowAllOutbound:true,
-        });
-        secGroup.addIngressRule(ec2.Peer.ipv4('0.0.0.0/0'), ec2.Port.tcp(80), 'SSH frm anywhere');
+        })
+
+        secGroup.addIngressRule(ec2.Peer.ipv4('0.0.0.0/0'), ec2.Port.tcp(80), '');
         secGroup.addIngressRule(ec2.Peer.ipv4('0.0.0.0/0'), ec2.Port.tcp(8080), '');
 
         const fargateService = new ecs.FargateService(this, 'auth-fargate-service', {
@@ -300,14 +298,14 @@ export class AuthEcsAppStack extends cdk.Stack {
             securityGroups:[
                 secGroup
             ]
-        });
+        })
 
         listener.addTargets('auth-tg', {
             targetGroupName: 'auth-tg',
             port: 8080,
             targets: [fargateService],
             deregistrationDelay: cdk.Duration.seconds(300)
-        });
+        })
 
     }
 }
