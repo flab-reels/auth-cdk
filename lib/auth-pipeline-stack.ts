@@ -1,5 +1,5 @@
 import * as cdk from 'aws-cdk-lib';
-import {SecretValue} from 'aws-cdk-lib';
+import {aws_ecs_patterns, SecretValue} from 'aws-cdk-lib';
 import {Construct} from 'constructs';
 import * as codepipeline from 'aws-cdk-lib/aws-codepipeline'
 import * as codepipeline_actions from 'aws-cdk-lib/aws-codepipeline-actions'
@@ -242,7 +242,7 @@ export class AuthEcsAppStack extends cdk.Stack {
 
         const vpc = new ec2.Vpc(this, 'Vpc', {
             vpcName:"auth-vpc",
-            maxAzs: 1,
+            maxAzs: 2,
         })
 
         const cluster = new ecs.Cluster(this, 'Cluster', {
@@ -271,15 +271,13 @@ export class AuthEcsAppStack extends cdk.Stack {
             protocol: ecs.Protocol.TCP
         })
 
-        const loadBalancer = new ApplicationLoadBalancer(this, 'auth-nlb',{
-            loadBalancerName:"auth-nlb",
-            vpc,
-            internetFacing : false,
-        })
+        // const loadBalancer = new ApplicationLoadBalancer(this, 'auth-nlb',{
+        //     loadBalancerName:"auth-nlb",
+        //     vpc,
+        //     internetFacing : false,
+        // })
 
-        const listener = loadBalancer.addListener('auth-listener',{
-            port:8080,
-        })
+
         const secGroup = new SecurityGroup(this, 'auth-sg', {
             securityGroupName: "auth-sg",
             vpc:vpc,
@@ -289,22 +287,17 @@ export class AuthEcsAppStack extends cdk.Stack {
         secGroup.addIngressRule(ec2.Peer.ipv4('0.0.0.0/0'), ec2.Port.tcp(80), '');
         secGroup.addIngressRule(ec2.Peer.ipv4('0.0.0.0/0'), ec2.Port.tcp(8080), '');
 
-        const fargateService = new ecs.FargateService(this, 'auth-fargate-service', {
+        const fargateService = new aws_ecs_patterns.ApplicationLoadBalancedFargateService(this, 'auth-fargate-service', {
             cluster,
             taskDefinition: taskDefinition,
             serviceName: 'auth-fargate-service',
             securityGroups:[
                 secGroup
-            ]
+            ],
+            listenerPort:8080
         })
 
-        listener.addTargets('auth-tg', {
 
-            targetGroupName: 'auth-tg',
-            port: 8080,
-            targets: [fargateService],
-            deregistrationDelay: cdk.Duration.seconds(300)
-        })
 
     }
 }
