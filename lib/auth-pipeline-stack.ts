@@ -8,7 +8,7 @@ import * as ecr from 'aws-cdk-lib/aws-ecr'
 import * as ecs from 'aws-cdk-lib/aws-ecs'
 import * as ec2 from 'aws-cdk-lib/aws-ec2'
 import {SecurityGroup} from 'aws-cdk-lib/aws-ec2'
-import {NetworkLoadBalancer, Protocol} from "aws-cdk-lib/aws-elasticloadbalancingv2"
+import {ApplicationLoadBalancer, NetworkLoadBalancer, Protocol} from "aws-cdk-lib/aws-elasticloadbalancingv2"
 
 export class AuthPipelineStack extends cdk.Stack {
     public readonly tagParameterContainerImage: ecs.TagParameterContainerImage;
@@ -246,7 +246,7 @@ export class AuthEcsAppStack extends cdk.Stack {
         })
 
         const cluster = new ecs.Cluster(this, 'Cluster', {
-            // vpc,
+            vpc,
             clusterName:"auth-cluster"
 
         })
@@ -271,7 +271,7 @@ export class AuthEcsAppStack extends cdk.Stack {
             protocol: ecs.Protocol.TCP
         })
 
-        const loadBalancer = new NetworkLoadBalancer(this, 'auth-nlb',{
+        const loadBalancer = new ApplicationLoadBalancer(this, 'auth-nlb',{
             loadBalancerName:"auth-nlb",
             vpc,
             internetFacing : false,
@@ -279,7 +279,6 @@ export class AuthEcsAppStack extends cdk.Stack {
 
         const listener = loadBalancer.addListener('auth-listener',{
             port:8080,
-            protocol:Protocol.TCP
         })
         const secGroup = new SecurityGroup(this, 'auth-sg', {
             securityGroupName: "auth-sg",
