@@ -240,12 +240,12 @@ export class AuthEcsAppStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props: EcsAppStackProps) {
         super(scope, id, props);
 
-        const vpc = new ec2.Vpc(this, 'Vpc', {
+        const vpc = new ec2.Vpc(this, 'auth-vpc', {
             vpcName:"auth-vpc",
             maxAzs: 1,
         })
 
-        const cluster = new ecs.Cluster(this, 'Cluster', {
+        const cluster = new ecs.Cluster(this, 'auth-cluster', {
             vpc,
             clusterName:"auth-cluster"
 
