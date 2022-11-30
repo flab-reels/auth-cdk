@@ -302,9 +302,9 @@ export class AuthEcsAppStack extends cdk.Stack {
                 containerPort:8080
             },
             // loadBalancerName: 'application-lb-auth',
-            securityGroups:[
-                secGroup
-            ]
+            // securityGroups:[
+            //     secGroup
+            // ]
 
         });
         fargateService.taskDefinition.executionRole?.addManagedPolicy((ManagedPolicy.fromAwsManagedPolicyName('AmazonEC2ContainerRegistryPowerUser')));
