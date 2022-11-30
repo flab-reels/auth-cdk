@@ -300,12 +300,12 @@ export class AuthEcsAppStack extends cdk.Stack {
                 containerPort:8080
             },
             listenerPort:8080,
-            taskSubnets: {
-                subnets: [
-                    ec2.Subnet.fromSubnetId(this, 'subnet1', 'subnet-0b1581a8826d43a6f'),
-                    ec2.Subnet.fromSubnetId(this, 'subnet2', 'subnet-07183f1de52539bb8')
-                ],
-            },
+            // taskSubnets: {
+            //     subnets: [
+            //         ec2.Subnet.fromSubnetId(this, 'subnet1', 'subnet-0b1581a8826d43a6f'),
+            //         ec2.Subnet.fromSubnetId(this, 'subnet2', 'subnet-07183f1de52539bb8')
+            //     ],
+            // },
             loadBalancerName: 'application-lb-auth',
             securityGroups:[
                 secGroup
