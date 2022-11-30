@@ -9,6 +9,7 @@ import * as ecs from 'aws-cdk-lib/aws-ecs'
 import * as ec2 from 'aws-cdk-lib/aws-ec2'
 import {SecurityGroup} from 'aws-cdk-lib/aws-ec2'
 import {ApplicationLoadBalancer, NetworkLoadBalancer, Protocol} from "aws-cdk-lib/aws-elasticloadbalancingv2"
+import {ManagedPolicy} from "aws-cdk-lib/aws-iam";
 
 export class AuthPipelineStack extends cdk.Stack {
     public readonly tagParameterContainerImage: ecs.TagParameterContainerImage;
@@ -292,26 +293,22 @@ export class AuthEcsAppStack extends cdk.Stack {
         const fargateService  = new aws_ecs_patterns.ApplicationLoadBalancedFargateService(this, 'Service', {
             cluster,
             memoryLimitMiB: 1024,
-            desiredCount: 1,
+            assignPublicIp:true,
             cpu: 512,
             taskImageOptions: {
                 containerName: "auth-container",
                 image: props.image,
                 containerPort:8080
             },
-            listenerPort:8080,
-            // taskSubnets: {
-            //     subnets: [
-            //         ec2.Subnet.fromSubnetId(this, 'subnet1', 'subnet-0b1581a8826d43a6f'),
-            //         ec2.Subnet.fromSubnetId(this, 'subnet2', 'subnet-07183f1de52539bb8')
-            //     ],
-            // },
             loadBalancerName: 'application-lb-auth',
             securityGroups:[
                 secGroup
             ]
 
         });
+        fargateService.taskDefinition.executionRole?.addManagedPolicy((ManagedPolicy.fromAwsManagedPolicyName('AmazonEC2ContainerRegistryPowerUser')));
+
+
 
 
         // const fargateService = new ecs.FargateService(this, 'auth-fargate-service', {
