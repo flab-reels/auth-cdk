@@ -321,7 +321,7 @@ export class AuthEcsAppStack extends cdk.Stack {
         const svc = new aws_ecs_patterns.ApplicationLoadBalancedFargateService(this, 'Service', {
             vpc,
             taskDefinition: task,
-            publicLoadBalancer: false,
+            publicLoadBalancer: true,
         });
         const nlb = new aws_elasticloadbalancingv2.NetworkLoadBalancer(this, 'Nlb', {
             vpc,
