@@ -246,6 +246,29 @@ export class AuthEcsAppStack extends cdk.Stack {
             maxAzs: 1,
         })
 
+        const myvpc = new ec2.Vpc(this, 'auth-vpc', {
+            cidr: '172.31.0.0/16',
+            natGateways: 1,
+            maxAzs: 3,
+            subnetConfiguration: [
+                {
+                    cidrMask: 20,
+                    name: 'public',
+                    subnetType: ec2.SubnetType.PUBLIC,
+                },
+                {
+                    cidrMask: 20,
+                    name: 'application',
+                    subnetType: ec2.SubnetType.PRIVATE_WITH_NAT,
+                },
+                {
+                    cidrMask: 20,
+                    name: 'data',
+                    subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
+                },
+            ],
+        });
+
         const cluster = new ecs.Cluster(this, 'Cluster', {
             vpc,
             clusterName:"auth-cluster"
@@ -292,7 +315,7 @@ export class AuthEcsAppStack extends cdk.Stack {
         secGroup.addIngressRule(ec2.Peer.ipv4('0.0.0.0/0'), ec2.Port.tcp(8080), '');
 
         const fargateService  = new aws_ecs_patterns.ApplicationLoadBalancedFargateService(this, 'Service', {
-            vpc: vpc,
+            vpc: myvpc,
             memoryLimitMiB: 1024,
             cpu: 512,
             assignPublicIp:true,
