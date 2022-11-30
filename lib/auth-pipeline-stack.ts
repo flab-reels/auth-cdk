@@ -271,7 +271,7 @@ export class AuthEcsAppStack extends cdk.Stack {
             protocol: ecs.Protocol.TCP
         })
 
-        const loadBalancer = new ApplicationLoadBalancer(this, 'auth-nlb',{
+        const loadBalancer = new NetworkLoadBalancer(this, 'auth-nlb',{
             loadBalancerName:"auth-nlb",
             vpc,
             internetFacing : true,
