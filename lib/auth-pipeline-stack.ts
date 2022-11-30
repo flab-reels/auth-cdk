@@ -292,7 +292,7 @@ export class AuthEcsAppStack extends cdk.Stack {
         secGroup.addIngressRule(ec2.Peer.ipv4('0.0.0.0/0'), ec2.Port.tcp(8080), '');
 
         const fargateService  = new aws_ecs_patterns.ApplicationLoadBalancedFargateService(this, 'Service', {
-            cluster,
+            vpc: vpc,
             memoryLimitMiB: 1024,
             cpu: 512,
             assignPublicIp:true,
