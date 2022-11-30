@@ -9,7 +9,6 @@ import * as ecs from 'aws-cdk-lib/aws-ecs'
 import * as ec2 from 'aws-cdk-lib/aws-ec2'
 import {SecurityGroup} from 'aws-cdk-lib/aws-ec2'
 import {ApplicationLoadBalancer, NetworkLoadBalancer, Protocol} from "aws-cdk-lib/aws-elasticloadbalancingv2"
-import {ManagedPolicy} from "aws-cdk-lib/aws-iam";
 
 export class AuthPipelineStack extends cdk.Stack {
     public readonly tagParameterContainerImage: ecs.TagParameterContainerImage;
@@ -241,95 +240,73 @@ export class AuthEcsAppStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props: EcsAppStackProps) {
         super(scope, id, props);
 
-        // const vpc = new ec2.Vpc(this, 'Vpc', {
-        //     vpcName:"auth-vpc",
-        //     maxAzs: 1,
-        // })
-
-        const vpc = new ec2.Vpc(this, 'auth-vpc', {
-            maxAzs: 3,
-        });
+        const vpc = new ec2.Vpc(this, 'Vpc', {
+            vpcName:"auth-vpc",
+            maxAzs: 1,
+        })
 
         const cluster = new ecs.Cluster(this, 'Cluster', {
-            containerInsights: true,
             vpc,
             clusterName:"auth-cluster"
 
         })
 
 
-        // const taskDefinition = new ecs.FargateTaskDefinition(this, 'TaskDefinition', {
-        //     family: 'auth-task-definition',
-        //     cpu: 512,
-        //     memoryLimitMiB: 1024,
-        // });
-
-
-        // const container = taskDefinition.addContainer('AppContainer', {
-        //     containerName: "auth-container",
-        //     image: props.image,
-        //
-        // });
-
-        // container.addPortMappings({
-        //     containerPort:8080,
-        //     hostPort:8080,
-        //     protocol: ecs.Protocol.TCP
-        // })
-
-        // const loadBalancer = new ApplicationLoadBalancer(this, 'auth-nlb',{
-        //     loadBalancerName:"auth-nlb",
-        //     vpc,
-        //     internetFacing : true,
-        // })
-        //
-        // const listener = loadBalancer.addListener('auth-listener',{
-        //     port:8080,
-        // })
-
-        // const secGroup = new SecurityGroup(this, 'auth-sg', {
-        //     securityGroupName: "auth-sg",
-        //     vpc:vpc,
-        //     allowAllOutbound:true,
-        // })
-        //
-        // secGroup.addIngressRule(ec2.Peer.ipv4('0.0.0.0/0'), ec2.Port.tcp(80), '');
-        // secGroup.addIngressRule(ec2.Peer.ipv4('0.0.0.0/0'), ec2.Port.tcp(8080), '');
-
-        new aws_ecs_patterns.ApplicationLoadBalancedFargateService(this, 'Service', {
-            cluster,
-            memoryLimitMiB: 1024,
+        const taskDefinition = new ecs.FargateTaskDefinition(this, 'TaskDefinition', {
+            family: 'auth-task-definition',
             cpu: 512,
-            assignPublicIp:true,
-            taskImageOptions: {
-                containerName: "auth-container",
-                image: props.image,
-                containerPort:8080
-            },
-            // loadBalancerName: 'application-lb-auth',
-            // securityGroups:[
-            //     secGroup
-            // ]
-
+            memoryLimitMiB: 1024,
         });
 
 
+        const container = taskDefinition.addContainer('AppContainer', {
+            containerName: "auth-container",
+            image: props.image,
 
-        // const fargateService = new ecs.FargateService(this, 'auth-fargate-service', {
-        //     cluster,
-        //     taskDefinition: taskDefinition,
-        //     serviceName: 'auth-fargate-service',
-        //     securityGroups:[
-        //         secGroup
-        //     ]
-        // })
-        // listener.addTargets('auth-tg', {
-        //
-        //     targetGroupName: 'auth-tg',
-        //     port: 8080,
-        //     targets: [fargateService],
-        //     deregistrationDelay: cdk.Duration.seconds(300)
-        // })
+        });
+
+        container.addPortMappings({
+            containerPort:8080,
+            hostPort:8080,
+            protocol: ecs.Protocol.TCP
+        })
+
+        const loadBalancer = new ApplicationLoadBalancer(this, 'auth-nlb',{
+            loadBalancerName:"auth-nlb",
+            vpc,
+            internetFacing : true,
+        })
+
+        const listener = loadBalancer.addListener('auth-listener',{
+            port:8080,
+        })
+        const secGroup = new SecurityGroup(this, 'auth-sg', {
+            securityGroupName: "auth-sg",
+            vpc:vpc,
+            allowAllOutbound:true,
+        })
+
+        secGroup.addIngressRule(ec2.Peer.ipv4('0.0.0.0/0'), ec2.Port.tcp(80), '');
+        secGroup.addIngressRule(ec2.Peer.ipv4('0.0.0.0/0'), ec2.Port.tcp(8080), '');
+
+
+
+
+        const fargateService = new ecs.FargateService(this, 'auth-fargate-service', {
+            cluster,
+            taskDefinition: taskDefinition,
+            serviceName: 'auth-fargate-service',
+            securityGroups:[
+                secGroup
+            ]
+        })
+        listener.addTargets('auth-tg', {
+
+            targetGroupName: 'auth-tg',
+            port: 8080,
+            targets: [fargateService],
+            deregistrationDelay: cdk.Duration.seconds(300)
+        })
 
     }
 }
