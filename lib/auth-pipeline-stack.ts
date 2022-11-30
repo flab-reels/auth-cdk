@@ -247,7 +247,7 @@ export class AuthEcsAppStack extends cdk.Stack {
 
         const vpc = new ec2.Vpc(this, 'auth-vpc', {
             vpcName:"auth-vpc",
-            maxAzs: 1,
+            maxAzs: 2,
         })
     //
     //     const cluster = new ecs.Cluster(this, 'auth-cluster', {
