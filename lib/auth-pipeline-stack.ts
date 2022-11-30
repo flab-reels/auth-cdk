@@ -281,6 +281,7 @@ export class AuthEcsAppStack extends cdk.Stack {
         // const listener = loadBalancer.addListener('auth-listener',{
         //     port:8080,
         // })
+
         const secGroup = new SecurityGroup(this, 'auth-sg', {
             securityGroupName: "auth-sg",
             vpc:vpc,
@@ -293,14 +294,14 @@ export class AuthEcsAppStack extends cdk.Stack {
         const fargateService  = new aws_ecs_patterns.ApplicationLoadBalancedFargateService(this, 'Service', {
             cluster,
             memoryLimitMiB: 1024,
-            assignPublicIp:true,
             cpu: 512,
+            assignPublicIp:true,
             taskImageOptions: {
                 containerName: "auth-container",
                 image: props.image,
                 containerPort:8080
             },
-            loadBalancerName: 'application-lb-auth',
+            // loadBalancerName: 'application-lb-auth',
             securityGroups:[
                 secGroup
             ]
