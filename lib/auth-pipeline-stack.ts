@@ -241,35 +241,17 @@ export class AuthEcsAppStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props: EcsAppStackProps) {
         super(scope, id, props);
 
-        const vpc = new ec2.Vpc(this, 'Vpc', {
-            vpcName:"auth-vpc",
-            maxAzs: 1,
-        })
+        // const vpc = new ec2.Vpc(this, 'Vpc', {
+        //     vpcName:"auth-vpc",
+        //     maxAzs: 1,
+        // })
 
-        const myvpc = new ec2.Vpc(this, 'auth-vpc', {
-            cidr: '172.31.0.0/16',
-            natGateways: 1,
+        const vpc = new ec2.Vpc(this, 'auth-vpc', {
             maxAzs: 3,
-            subnetConfiguration: [
-                {
-                    cidrMask: 20,
-                    name: 'public',
-                    subnetType: ec2.SubnetType.PUBLIC,
-                },
-                {
-                    cidrMask: 20,
-                    name: 'application',
-                    subnetType: ec2.SubnetType.PRIVATE_WITH_NAT,
-                },
-                {
-                    cidrMask: 20,
-                    name: 'data',
-                    subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
-                },
-            ],
         });
 
         const cluster = new ecs.Cluster(this, 'Cluster', {
+            containerInsights: true,
             vpc,
             clusterName:"auth-cluster"
 
@@ -305,17 +287,17 @@ export class AuthEcsAppStack extends cdk.Stack {
         //     port:8080,
         // })
 
-        const secGroup = new SecurityGroup(this, 'auth-sg', {
-            securityGroupName: "auth-sg",
-            vpc:vpc,
-            allowAllOutbound:true,
-        })
+        // const secGroup = new SecurityGroup(this, 'auth-sg', {
+        //     securityGroupName: "auth-sg",
+        //     vpc:vpc,
+        //     allowAllOutbound:true,
+        // })
+        //
+        // secGroup.addIngressRule(ec2.Peer.ipv4('0.0.0.0/0'), ec2.Port.tcp(80), '');
+        // secGroup.addIngressRule(ec2.Peer.ipv4('0.0.0.0/0'), ec2.Port.tcp(8080), '');
 
-        secGroup.addIngressRule(ec2.Peer.ipv4('0.0.0.0/0'), ec2.Port.tcp(80), '');
-        secGroup.addIngressRule(ec2.Peer.ipv4('0.0.0.0/0'), ec2.Port.tcp(8080), '');
-
-        const fargateService  = new aws_ecs_patterns.ApplicationLoadBalancedFargateService(this, 'Service', {
-            vpc: myvpc,
+        new aws_ecs_patterns.ApplicationLoadBalancedFargateService(this, 'Service', {
+            cluster,
             memoryLimitMiB: 1024,
             cpu: 512,
             assignPublicIp:true,
@@ -330,8 +312,6 @@ export class AuthEcsAppStack extends cdk.Stack {
             // ]
 
         });
-        fargateService.taskDefinition.executionRole?.addManagedPolicy((ManagedPolicy.fromAwsManagedPolicyName('AmazonEC2ContainerRegistryPowerUser')));
-
 
 
 
