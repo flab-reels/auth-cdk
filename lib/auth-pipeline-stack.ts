@@ -187,7 +187,7 @@ export class AuthPipelineStack extends cdk.Stack {
                             actionName: 'CFN_Deploy',
                             stackName: 'EcsStackDeployedInPipeline',
                             // this name has to be the same name as used below in the CDK code for the application Stack
-                            templatePath: cdkCodeBuildOutput.atPath('EcsStackDeployedInPipeline.template.json'),
+                            templatePath: cdkCodeBuildOutput.atPath('EcsPipelineStack.template.json'),
                             adminPermissions: true,
                             parameterOverrides: {
                                 // read the tag pushed to the ECR repository from the CodePipeline Variable saved by the application build step,
@@ -288,6 +288,7 @@ export class AuthEcsAppStack extends cdk.Stack {
 
         //7. Create container for the task definition from ECR image
         const container = taskDef.addContainer("auth-container", {
+            containerName:"auth-container",
             image: props.image,
             logging: log
         });
