@@ -113,7 +113,6 @@ export class AuthPipelineStack extends cdk.Stack {
                     install: {
                         commands: [
                             'npm install',
-                            "n 16.15.1"
                         ],
                     },
                     build: {
