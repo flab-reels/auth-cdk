@@ -248,12 +248,12 @@ export class AuthEcsAppStack extends cdk.Stack {
             vpcName:"auth-vpc",
             maxAzs: 2,
         })
-    //
-    //     const cluster = new ecs.Cluster(this, 'auth-cluster', {
-    //         vpc,
-    //         clusterName:"auth-cluster"
-    //
-    //     })
+
+        const cluster = new ecs.Cluster(this, 'auth-cluster', {
+            vpc,
+            clusterName:"auth-cluster"
+
+        })
     //
     //
     //     const taskDefinition = new ecs.FargateTaskDefinition(this, 'TaskDefinition', {
@@ -314,27 +314,26 @@ export class AuthEcsAppStack extends cdk.Stack {
     //
         const task = new ecs.FargateTaskDefinition(this, 'Task', { cpu: 256, memoryLimitMiB: 512 });
         task.addContainer('auth-container', {
+            containerName: "auth-container",
             image: props.image,
             portMappings: [{ containerPort: 80 }],
         });
-        const svc = new aws_ecs_patterns.ApplicationLoadBalancedFargateService(this, 'Service', {
-            vpc,
+        const svc = new ecs.FargateService(this, 'Service', {
+            cluster:cluster,
             taskDefinition: task,
-            publicLoadBalancer: true,
+            // publicLoadBalancer: true,
         });
-        const nlb = new aws_elasticloadbalancingv2.NetworkLoadBalancer(this, 'Nlb', {
-            vpc,
-            crossZoneEnabled: true,
-            internetFacing: true,
-        });
-        const listener = nlb.addListener('listener', { port: 80 });
-
-        listener.addTargets('Targets', {
-            targets: [new aws_elasticloadbalancingv2_targets.AlbTarget(svc.loadBalancer, 80)],
-            port: 80,
-        });
-
-        new CfnOutput(this, 'NlbEndpoint', { value: `http://${nlb.loadBalancerDnsName}`})
+        // const nlb = new aws_elasticloadbalancingv2.NetworkLoadBalancer(this, 'Nlb', {
+        //     vpc,
+        //     crossZoneEnabled: true,
+        //     internetFacing: true,
+        // });
+        // const listener = nlb.addListener('listener', { port: 80 });
+        //
+        // listener.addTargets('Targets', {
+        //     targets: [new aws_elasticloadbalancingv2_targets.AlbTarget(svc.loadBalancer, 80)],
+        //     port: 80,
+        // });
 
     }
 }
