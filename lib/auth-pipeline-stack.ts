@@ -113,6 +113,7 @@ export class AuthPipelineStack extends cdk.Stack {
                     install: {
                         commands: [
                             'npm install',
+                            'npm install -g aws-cdk'
                         ],
                     },
                     build: {
