@@ -14,6 +14,8 @@ import * as ecs from 'aws-cdk-lib/aws-ecs'
 import * as ec2 from 'aws-cdk-lib/aws-ec2'
 import {SecurityGroup} from 'aws-cdk-lib/aws-ec2'
 import {ApplicationLoadBalancer, NetworkLoadBalancer, Protocol} from "aws-cdk-lib/aws-elasticloadbalancingv2"
+import {LogGroup} from "aws-cdk-lib/aws-logs";
+import {Effect, PolicyStatement, Role, ServicePrincipal} from "aws-cdk-lib/aws-iam";
 
 export class AuthPipelineStack extends cdk.Stack {
     public readonly tagParameterContainerImage: ecs.TagParameterContainerImage;
@@ -245,96 +247,98 @@ export class AuthEcsAppStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props: EcsAppStackProps) {
         super(scope, id, props);
 
-        const vpc = new ec2.Vpc(this, 'auth-vpc', {
-            vpcName:"auth-vpc",
-            maxAzs: 2,
+        //1. Create VPC
+        const vpc = new ec2.Vpc(this, 'Vpc', { maxAzs: 2 });
+
+        //2. Creation of Execution Role for our task
+        const execRole = new Role(this, 'search-api-exec-role', {
+            roleName: 'social-api-role', assumedBy: new ServicePrincipal('ecs-tasks.amazonaws.com')
+        })
+        //3. Adding permissions to the above created role...basically giving permissions to ECR image and Cloudwatch logs
+        execRole.addToPolicy(new PolicyStatement({
+            actions: [
+                "ecr:GetAuthorizationToken",
+                "ecr:BatchCheckLayerAvailability",
+                "ecr:GetDownloadUrlForLayer",
+                "ecr:BatchGetImage",
+                "logs:CreateLogStream",
+                "logs:PutLogEvents"
+            ], effect: Effect.ALLOW, resources: ["*"]
+        }));
+
+        //4. Create the ECS fargate cluster
+        const cluster = new ecs.Cluster(this, 'social-api-cluster', { vpc, clusterName: "social-api-cluster" });
+
+        //5. Create a task definition for our cluster to invoke a task
+        const taskDef = new ecs.FargateTaskDefinition(this, "search-api-task", {
+            family: 'search-api-task',
+            memoryLimitMiB: 512,
+            cpu: 256,
+            executionRole: execRole,
+            taskRole: execRole
+        });
+
+        //6. Create log group for our task to put logs
+        const lg = LogGroup.fromLogGroupName(this, 'search-api-log-group',  '/ecs/search-api-task');
+        const log = new ecs.AwsLogDriver({
+            logGroup : lg? lg : new LogGroup(this, 'search-api-log-group',{logGroupName:'/ecs/search-api-task'
+            }),
+            streamPrefix : 'ecs'
         })
 
-        const cluster = new ecs.Cluster(this, 'auth-cluster', {
-            vpc,
-            clusterName:"auth-cluster"
-
-        })
-    //
-    //
-    //     const taskDefinition = new ecs.FargateTaskDefinition(this, 'TaskDefinition', {
-    //         family: 'auth-task-definition',
-    //         cpu: 512,
-    //         memoryLimitMiB: 1024,
-    //     });
-    //
-    //
-    //     const container = taskDefinition.addContainer('AppContainer', {
-    //         containerName: "auth-container",
-    //         image: props.image,
-    //
-    //     });
-    //
-    //     container.addPortMappings({
-    //         containerPort:8080,
-    //         hostPort:8080,
-    //         protocol: ecs.Protocol.TCP
-    //     })
-    //
-    //     const loadBalancer = new NetworkLoadBalancer(this, 'auth-nlb',{
-    //         loadBalancerName:"auth-nlb",
-    //         vpc,
-    //         internetFacing : true,
-    //     })
-    //
-    //     const listener = loadBalancer.addListener('auth-listener',{
-    //         port:8080,
-    //     })
-    //     const secGroup = new SecurityGroup(this, 'auth-sg', {
-    //         securityGroupName: "auth-sg",
-    //         vpc:vpc,
-    //         allowAllOutbound:true,
-    //     })
-    //
-    //     secGroup.addIngressRule(ec2.Peer.ipv4('0.0.0.0/0'), ec2.Port.tcp(80), '');
-    //     secGroup.addIngressRule(ec2.Peer.ipv4('0.0.0.0/0'), ec2.Port.tcp(8080), '');
-    //
-    //
-    //
-    //
-    //     const fargateService = new ecs.FargateService(this, 'auth-fargate-service', {
-    //         cluster,
-    //         taskDefinition: taskDefinition,
-    //         serviceName: 'auth-fargate-service',
-    //         securityGroups:[
-    //             secGroup
-    //         ]
-    //     })
-    //     listener.addTargets('auth-tg', {
-    //
-    //         targetGroupName: 'auth-tg',
-    //         port: 8080,
-    //         targets: [fargateService],
-    //         deregistrationDelay: cdk.Duration.seconds(300)
-    //     })
-    //
-        const task = new ecs.FargateTaskDefinition(this, 'Task', { cpu: 256, memoryLimitMiB: 512 });
-        task.addContainer('auth-container', {
-            containerName: "auth-container",
+        //7. Create container for the task definition from ECR image
+        const container = taskDef.addContainer("search-api-container", {
             image: props.image,
-            portMappings: [{ containerPort: 80 }],
+            logging: log
         });
-        const svc = new ecs.FargateService(this, 'Service', {
-            cluster:cluster,
-            taskDefinition: task,
-            // publicLoadBalancer: true,
-        });
-        // const nlb = new aws_elasticloadbalancingv2.NetworkLoadBalancer(this, 'Nlb', {
-        //     vpc,
-        //     crossZoneEnabled: true,
-        //     internetFacing: true,
-        // });
-        // const listener = nlb.addListener('listener', { port: 80 });
-        //
-        // listener.addTargets('Targets', {
-        //     targets: [new aws_elasticloadbalancingv2_targets.AlbTarget(svc.loadBalancer, 80)],
-        //     port: 80,
-        // });
 
+        //8. Add port mappings to your container...Make sure you use TCP protocol for Network Load Balancer (NLB)
+        container.addPortMappings({
+            containerPort: 8080,
+            hostPort: 8080,
+            protocol: ecs.Protocol.TCP
+        });
+
+        //9. Create the NLB using the above VPC.
+        const lb = new NetworkLoadBalancer(this, 'search-api-nlb', {
+            loadBalancerName: 'search-api-nlb',
+            vpc,
+            internetFacing: false
+        });
+
+        //10. Add a listener on a particular port for the NLB
+        const listener = lb.addListener('search-api-listener', {
+            port: 8080,
+        });
+
+        //11. Create your own security Group using VPC
+        const secGroup = new SecurityGroup(this, 'search-api-sg', {
+            securityGroupName: "search-sg",
+            vpc:vpc,
+            allowAllOutbound:true
+        });
+
+        //12. Add IngressRule to access the docker image on 80 and 7070 ports
+        secGroup.addIngressRule(ec2.Peer.ipv4('0.0.0.0/0'), ec2.Port.tcp(80), 'SSH frm anywhere');
+        secGroup.addIngressRule(ec2.Peer.ipv4('0.0.0.0/0'), ec2.Port.tcp(8080), '');
+
+        //13. Create Fargate Service from cluster, task definition and the security group
+        const fargateService = new ecs.FargateService(this, 'search-api-fg-service', {
+            cluster,
+            taskDefinition: taskDef,
+            assignPublicIp: true,
+            serviceName: "search-api-svc",
+            securityGroups:[secGroup]
+        });
+
+        //14. Add fargate service to the listener
+        listener.addTargets('search-api-tg', {
+            targetGroupName: 'search-api-tg',
+            port: 8080,
+            targets: [fargateService],
+            deregistrationDelay: cdk.Duration.seconds(300)
+        });
+
+        new cdk.CfnOutput(this, 'ClusterARN: ', { value: cluster.clusterArn });
     }
 }
