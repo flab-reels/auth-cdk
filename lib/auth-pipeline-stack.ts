@@ -254,17 +254,7 @@ export class AuthEcsAppStack extends cdk.Stack {
         const execRole = new Role(this, 'auth-api-exec-role', {
             roleName: 'auth-api-role', assumedBy: new ServicePrincipal('ecs-tasks.amazonaws.com')
         })
-        //3. Adding permissions to the above created role...basically giving permissions to ECR image and Cloudwatch logs
-        execRole.addToPolicy(new PolicyStatement({
-            actions: [
-                "ecr:GetAuthorizationToken",
-                "ecr:BatchCheckLayerAvailability",
-                "ecr:GetDownloadUrlForLayer",
-                "ecr:BatchGetImage",
-                "logs:CreateLogStream",
-                "logs:PutLogEvents"
-            ], effect: Effect.ALLOW, resources: ["*"]
-        }));
+
 
         //4. Create the ECS fargate cluster
         const cluster = new ecs.Cluster(this, 'auth-cluster', { vpc, clusterName: "auth-cluster" });
@@ -278,19 +268,11 @@ export class AuthEcsAppStack extends cdk.Stack {
             taskRole: execRole
         });
 
-        //6. Create log group for our task to put logs
-        const lg = LogGroup.fromLogGroupName(this, 'auth-log-group',  '/ecs/auth-task');
-        const log = new ecs.AwsLogDriver({
-            logGroup : lg? lg : new LogGroup(this, 'auth-log-group',{logGroupName:'/ecs/auth-task'
-            }),
-            streamPrefix : 'ecs'
-        })
 
         //7. Create container for the task definition from ECR image
         const container = taskDef.addContainer("auth-container", {
             containerName:"auth-container",
             image: props.image,
-            logging: log
         });
 
         //8. Add port mappings to your container...Make sure you use TCP protocol for Network Load Balancer (NLB)
