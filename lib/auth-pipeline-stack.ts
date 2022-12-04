@@ -1,10 +1,5 @@
 import * as cdk from 'aws-cdk-lib';
-import {
-    aws_ecs_patterns,
-    aws_elasticloadbalancingv2,
-    aws_elasticloadbalancingv2_targets, CfnOutput,
-    SecretValue
-} from 'aws-cdk-lib';
+import {SecretValue} from 'aws-cdk-lib';
 import {Construct} from 'constructs';
 import * as codepipeline from 'aws-cdk-lib/aws-codepipeline'
 import * as codepipeline_actions from 'aws-cdk-lib/aws-codepipeline-actions'
@@ -13,9 +8,7 @@ import * as ecr from 'aws-cdk-lib/aws-ecr'
 import * as ecs from 'aws-cdk-lib/aws-ecs'
 import * as ec2 from 'aws-cdk-lib/aws-ec2'
 import {SecurityGroup} from 'aws-cdk-lib/aws-ec2'
-import {ApplicationLoadBalancer, NetworkLoadBalancer, Protocol} from "aws-cdk-lib/aws-elasticloadbalancingv2"
-import {LogGroup} from "aws-cdk-lib/aws-logs";
-import {Effect, PolicyStatement, Role, ServicePrincipal} from "aws-cdk-lib/aws-iam";
+import * as nlbv2 from "aws-cdk-lib/aws-elasticloadbalancingv2"
 
 export class AuthPipelineStack extends cdk.Stack {
     public readonly tagParameterContainerImage: ecs.TagParameterContainerImage;
@@ -247,74 +240,65 @@ export class AuthEcsAppStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props: EcsAppStackProps) {
         super(scope, id, props);
 
-        //1. Create VPC
-        const vpc = new ec2.Vpc(this, 'Vpc', { maxAzs: 2 });
+        const vpc = new ec2.Vpc(this, 'Vpc', {
+            vpcName:"auth-vpc",
+            maxAzs: 2,
+        })
 
-        //2. Creation of Execution Role for our task
-        const execRole = new Role(this, 'auth-api-exec-role', {
-            roleName: 'auth-api-role', assumedBy: new ServicePrincipal('ecs-tasks.amazonaws.com')
+        const cluster = new ecs.Cluster(this, 'Cluster', {
+            vpc,
+            clusterName:"auth-cluster"
+
         })
 
 
-        //4. Create the ECS fargate cluster
-        const cluster = new ecs.Cluster(this, 'auth-cluster', { vpc, clusterName: "auth-cluster" });
-
-        //5. Create a task definition for our cluster to invoke a task
-        const taskDef = new ecs.FargateTaskDefinition(this, "auth-task", {
-            family: 'auth-task',
-            memoryLimitMiB: 512,
+        const taskDefinition = new ecs.FargateTaskDefinition(this, 'TaskDefinition', {
+            family: 'auth-task-definition',
             cpu: 256,
-            executionRole: execRole,
-            taskRole: execRole
+            memoryLimitMiB: 512,
         });
 
 
-        //7. Create container for the task definition from ECR image
-        const container = taskDef.addContainer("auth-container", {
-            containerName:"auth-container",
+        const container = taskDefinition.addContainer('AppContainer', {
+            containerName: "auth-container",
             image: props.image,
+
         });
 
-        //8. Add port mappings to your container...Make sure you use TCP protocol for Network Load Balancer (NLB)
         container.addPortMappings({
-            containerPort: 8080,
-            hostPort: 8080,
+            containerPort:8080,
+            hostPort:8080,
             protocol: ecs.Protocol.TCP
-        });
+        })
 
-        //9. Create the NLB using the above VPC.
-        const lb = new NetworkLoadBalancer(this, 'auth-nlb', {
-            loadBalancerName: 'auth-nlb',
+        const loadBalancer = new nlbv2.NetworkLoadBalancer(this, 'auth-nlb',{
+            loadBalancerName:"auth-nlb",
             vpc,
-            internetFacing: false
-        });
+            internetFacing:false,
 
-        //10. Add a listener on a particular port for the NLB
-        const listener = lb.addListener('auth-listener', {
-            port: 8080,
-        });
+        })
 
-        //11. Create your own security Group using VPC
+        const listener = loadBalancer.addListener('auth-listener',{
+            port:8080
+        })
+
         const secGroup = new SecurityGroup(this, 'auth-sg', {
-            securityGroupName: "search-sg",
+            securityGroupName: "auth-sg",
             vpc:vpc,
             allowAllOutbound:true
         });
-
-        //12. Add IngressRule to access the docker image on 80 and 7070 ports
         secGroup.addIngressRule(ec2.Peer.ipv4('0.0.0.0/0'), ec2.Port.tcp(80), 'SSH frm anywhere');
         secGroup.addIngressRule(ec2.Peer.ipv4('0.0.0.0/0'), ec2.Port.tcp(8080), '');
 
-        //13. Create Fargate Service from cluster, task definition and the security group
-        const fargateService = new ecs.FargateService(this, 'auth-fg-service', {
+        const fargateService = new ecs.FargateService(this, 'auth-fargate-service', {
             cluster,
-            taskDefinition: taskDef,
-            assignPublicIp: true,
-            serviceName: "auth-svc",
-            securityGroups:[secGroup]
+            taskDefinition: taskDefinition,
+            serviceName: 'auth-fargate-service',
+            securityGroups:[
+                secGroup
+            ]
         });
 
-        //14. Add fargate service to the listener
         listener.addTargets('auth-tg', {
             targetGroupName: 'auth-tg',
             port: 8080,
@@ -322,6 +306,7 @@ export class AuthEcsAppStack extends cdk.Stack {
             deregistrationDelay: cdk.Duration.seconds(300)
         });
 
-        new cdk.CfnOutput(this, 'ClusterARN: ', { value: cluster.clusterArn });
+
+
     }
 }
