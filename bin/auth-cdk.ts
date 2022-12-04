@@ -4,8 +4,8 @@ import * as cdk from 'aws-cdk-lib';
 import {AuthEcsAppStack, AuthPipelineStack} from "../lib/auth-pipeline-stack";
 
 const app = new cdk.App();
-const authPipelineStack = new AuthPipelineStack(app, 'EcsPipelineStack');
+const authPipelineStack = new AuthPipelineStack(app, 'AuthPipelineStack');
 
-new AuthEcsAppStack(app, 'EcsStackDeployedInPipeline', {
+new AuthEcsAppStack(app, 'AuthEcsStackDeployedInPipeline', {
     image: authPipelineStack.tagParameterContainerImage,
 });

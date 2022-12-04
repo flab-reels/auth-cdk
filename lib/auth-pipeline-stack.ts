@@ -9,6 +9,7 @@ import * as ecs from 'aws-cdk-lib/aws-ecs'
 import * as ec2 from 'aws-cdk-lib/aws-ec2'
 import {SecurityGroup} from 'aws-cdk-lib/aws-ec2'
 import * as nlbv2 from "aws-cdk-lib/aws-elasticloadbalancingv2"
+import * as s3 from 'aws-cdk-lib/aws-s3'
 
 export class AuthPipelineStack extends cdk.Stack {
     public readonly tagParameterContainerImage: ecs.TagParameterContainerImage;
@@ -17,7 +18,8 @@ export class AuthPipelineStack extends cdk.Stack {
 
 
         const appEcrRepo = new ecr.Repository(this, 'auth-ecr-repository',{
-            repositoryName:'auth-ecr-repository'
+            // repositoryName:'auth-ecr-repository'
+
         });
 
 
@@ -145,6 +147,9 @@ export class AuthPipelineStack extends cdk.Stack {
         const cdkSourceAction = this.createCDKGithubSourceAction(cdkCodeSourceOutput)
 
         new codepipeline.Pipeline(this, 'auth-code-pipeline', {
+            artifactBucket: new s3.Bucket(this, 'ArtifactBucket', {
+                removalPolicy: cdk.RemovalPolicy.DESTROY,
+            }),
             pipelineName:"auth-pipeline",
 
             stages: [
@@ -182,7 +187,7 @@ export class AuthPipelineStack extends cdk.Stack {
                             actionName: 'CFN_Deploy',
                             stackName: 'EcsStackDeployedInPipeline',
                             // this name has to be the same name as used below in the CDK code for the application Stack
-                            templatePath: cdkCodeBuildOutput.atPath('EcsStackDeployedInPipeline.template.json'),
+                            templatePath: cdkCodeBuildOutput.atPath('AuthEcsStackDeployedInPipeline.template.json'),
                             adminPermissions: true,
                             parameterOverrides: {
                                 // read the tag pushed to the ECR repository from the CodePipeline Variable saved by the application build step,
@@ -203,7 +208,7 @@ export class AuthPipelineStack extends cdk.Stack {
             actionName: 'auth-pipeline-github',
             owner: 'flab-reels',
             repo: 'auth',
-            oauthToken: SecretValue.secretsManager('auth_demo_v6'),
+            oauthToken: SecretValue.secretsManager('auth-github'),
             output: sourceOutput,
             branch: 'master', // default: 'master'
         });
@@ -214,7 +219,7 @@ export class AuthPipelineStack extends cdk.Stack {
             actionName: 'auth-pipeline-cdk',
             owner: 'flab-reels',
             repo: 'auth-cdk',
-            oauthToken: SecretValue.secretsManager('auth_demo_v6'),
+            oauthToken: SecretValue.secretsManager('auth-github'),
             output: sourceOutput,
             branch: 'master', // default: 'master'
         });
@@ -244,7 +249,6 @@ export class AuthEcsAppStack extends cdk.Stack {
 
         const vpc = new ec2.Vpc(this, 'Vpc', {
             vpcName:"auth-vpc",
-            cidr: "10.0.1.0/24",
             natGateways: 0,
             subnetConfiguration: [
                 { cidrMask: 26, name: "ELB", subnetType: ec2.SubnetType.PUBLIC }
