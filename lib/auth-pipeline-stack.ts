@@ -108,12 +108,14 @@ export class AuthPipelineStack extends cdk.Stack {
                     install: {
                         commands: [
                             'npm install',
+                            'npm install -g aws-cdk',
                             "n 16.15.1",
                         ],
                     },
                     build: {
                         commands: [
                             // synthesize the CDK code for the ECS application Stack
+                            'npx cdk --version',
                             'npx cdk synth --verbose',
                         ],
                     },
