@@ -242,20 +242,11 @@ export class AuthEcsAppStack extends cdk.Stack {
 
         const vpc = new ec2.Vpc(this, 'Vpc', {
             vpcName:"auth-vpc",
+            cidr: "10.0.1.0/24",
             natGateways: 0,
-            // natGatewayPlacement: {subnetName: 'Public'},
             subnetConfiguration: [
-                {
-                    cidrMask: 26,
-                    name: 'Public',
-                    subnetType: ec2.SubnetType.PUBLIC,
-                },
-                {
-                    name: 'Application',
-                    subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
-                },
+                { cidrMask: 26, name: "ELB", subnetType: ec2.SubnetType.PUBLIC }
             ],
-            defaultInstanceTenancy: ec2.DefaultInstanceTenancy.DEFAULT,
         })
 
         const cluster = new ecs.Cluster(this, 'Cluster', {
