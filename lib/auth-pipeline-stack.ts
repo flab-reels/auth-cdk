@@ -249,10 +249,7 @@ export class AuthEcsAppStack extends cdk.Stack {
 
         const vpc = new ec2.Vpc(this, 'Vpc', {
             vpcName:"auth-vpc",
-            natGateways: 0,
-            subnetConfiguration: [
-                { cidrMask: 26, name: "ELB", subnetType: ec2.SubnetType.PUBLIC }
-            ],
+
         })
 
         const cluster = new ecs.Cluster(this, 'Cluster', {
@@ -278,18 +275,22 @@ export class AuthEcsAppStack extends cdk.Stack {
         container.addPortMappings({
             containerPort:8080,
             hostPort:8080,
-            protocol: ecs.Protocol.TCP
+            protocol: ecs.Protocol.TCP,
+
+
         })
 
-        const loadBalancer = new nlbv2.NetworkLoadBalancer(this, 'auth-nlb',{
+        const loadBalancer = new nlbv2.ApplicationLoadBalancer(this, 'auth-nlb',{
             loadBalancerName:"auth-nlb",
             vpc,
-            internetFacing:false,
+            internetFacing:true,
+
 
         })
 
         const listener = loadBalancer.addListener('auth-listener',{
-            port:8080
+            port:8080,
+
         })
 
         const secGroup = new SecurityGroup(this, 'auth-sg', {
@@ -304,6 +305,7 @@ export class AuthEcsAppStack extends cdk.Stack {
             cluster,
             taskDefinition: taskDefinition,
             serviceName: 'auth-fargate-service',
+            assignPublicIp:true,
             securityGroups:[
                 secGroup
             ]
@@ -313,7 +315,8 @@ export class AuthEcsAppStack extends cdk.Stack {
             targetGroupName: 'auth-tg',
             port: 8080,
             targets: [fargateService],
-            deregistrationDelay: cdk.Duration.seconds(300)
+            deregistrationDelay: cdk.Duration.seconds(300),
+
         });
 
 
