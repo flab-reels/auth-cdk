@@ -280,18 +280,17 @@ export class AuthEcsAppStack extends cdk.Stack {
 
         })
 
-        const loadBalancer = new nlbv2.ApplicationLoadBalancer(this, 'auth-nlb',{
-            loadBalancerName:"auth-nlb",
-            vpc,
-            internetFacing:true,
+        // const loadBalancer = new nlbv2.ApplicationLoadBalancer(this, 'auth-nlb',{
+        //     loadBalancerName:"auth-nlb",
+        //     vpc,
+        //     internetFacing:false,
+        //
+        //
+        // })
 
-
-        })
-
-        const listener = loadBalancer.addListener('auth-listener',{
-            port:8080,
-
-        })
+        // const listener = loadBalancer.addListener('auth-listener',{
+        //     port:8080,
+        // })
 
         const secGroup = new SecurityGroup(this, 'auth-sg', {
             securityGroupName: "auth-sg",
@@ -311,13 +310,13 @@ export class AuthEcsAppStack extends cdk.Stack {
             ]
         });
 
-        listener.addTargets('auth-tg', {
-            targetGroupName: 'auth-tg',
-            port: 8080,
-            targets: [fargateService],
-            deregistrationDelay: cdk.Duration.seconds(300),
-
-        });
+        // listener.addTargets('auth-tg', {
+        //     targetGroupName: 'auth-tg',
+        //     port: 8080,
+        //     targets: [fargateService],
+        //     deregistrationDelay: cdk.Duration.seconds(300),
+        //
+        // });
 
 
 
