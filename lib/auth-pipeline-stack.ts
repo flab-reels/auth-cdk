@@ -18,7 +18,7 @@ export class AuthPipelineStack extends cdk.Stack {
 
 
         const appEcrRepo = new ecr.Repository(this, 'auth-ecr-repository',{
-            // repositoryName:'auth-ecr-repository'
+            repositoryName:'auth-repository'
 
         });
 
@@ -273,7 +273,7 @@ export class AuthEcsAppStack extends cdk.Stack {
         });
 
         container.addPortMappings({
-            containerPort:8080,
+            containerPort:80,
             hostPort:80,
             protocol: ecs.Protocol.TCP,
 
