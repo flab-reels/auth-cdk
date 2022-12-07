@@ -19,7 +19,6 @@ export class AuthPipelineStack extends cdk.Stack {
 
         const appEcrRepo = new ecr.Repository(this, 'auth-ecr-repository',{
             repositoryName:'auth-repository'
-
         });
 
 
