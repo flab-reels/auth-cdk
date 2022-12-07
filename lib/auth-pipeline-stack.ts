@@ -274,7 +274,7 @@ export class AuthEcsAppStack extends cdk.Stack {
 
         container.addPortMappings({
             containerPort:8080,
-            hostPort:8080,
+            hostPort:80,
             protocol: ecs.Protocol.TCP,
 
 
@@ -297,6 +297,7 @@ export class AuthEcsAppStack extends cdk.Stack {
             vpc:vpc,
             allowAllOutbound:true
         });
+
         secGroup.addIngressRule(ec2.Peer.ipv4('0.0.0.0/0'), ec2.Port.tcp(80), 'SSH frm anywhere');
         secGroup.addIngressRule(ec2.Peer.ipv4('0.0.0.0/0'), ec2.Port.tcp(8080), '');
 
