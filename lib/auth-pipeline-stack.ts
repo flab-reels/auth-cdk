@@ -182,8 +182,8 @@ export class AuthPipelineStack extends cdk.Stack {
                     stageName: 'Deploy',
                     actions: [
                         new codepipeline_actions.CloudFormationCreateUpdateStackAction({
-                            actionName: 'CFN_Deploy',
-                            stackName: 'EcsStackDeployedInPipeline',
+                            actionName: 'Auth_CloudFormation_CodeDeploy',
+                            stackName: 'AuthEcsStackDeployedInPipeline',
                             // this name has to be the same name as used below in the CDK code for the application Stack
                             templatePath: cdkCodeBuildOutput.atPath('AuthEcsStackDeployedInPipeline.template.json'),
                             adminPermissions: true,
