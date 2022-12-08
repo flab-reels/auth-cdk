@@ -47,21 +47,21 @@ export class AuthPipelineStack extends cdk.Stack {
 
                             'echo Logging in to Amazon ECR...',
                             '$(aws ecr get-login --region $AWS_DEFAULT_REGION --no-include-email)',
-
-                            'IMAGE_TAG=${COMMIT_HASH:=latest}',
+                            //
+                            // 'IMAGE_TAG=${COMMIT_HASH:=latest}',
                         ]
                     },
                     build: {
                         commands: [
                             'echo Build started on `date`',
-                            './gradlew bootBuildImage --imageName=$REPOSITORY_URI:$IMAGE_TAG',
+                            './gradlew bootBuildImage --imageName=$REPOSITORY_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION .',
 
                             'echo Pushing Docker Image',
 
-                            'docker push $REPOSITORY_URI:$IMAGE_TAG',
+                            'docker push $REPOSITORY_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION',
 
-                            'export imageTag=$IMAGE_TAG',
-                            'echo imageTag=$IMAGE_TAG'
+                            'export imageTag=$CODEBUILD_RESOLVED_SOURCE_VERSION',
+                            'echo imageTag=$CODEBUILD_RESOLVED_SOURCE_VERSION'
                         ],
                     },
                     post_build: {
@@ -147,6 +147,7 @@ export class AuthPipelineStack extends cdk.Stack {
 
         new codepipeline.Pipeline(this, 'auth-code-pipeline', {
             artifactBucket: new s3.Bucket(this, 'ArtifactBucket', {
+                bucketName:'auth-cdk-bucket',
                 removalPolicy: cdk.RemovalPolicy.DESTROY,
             }),
             pipelineName:"auth-pipeline",
