@@ -47,29 +47,26 @@ export class AuthPipelineStack extends cdk.Stack {
 
                             'echo Logging in to Amazon ECR...',
                             '$(aws ecr get-login --region $AWS_DEFAULT_REGION --no-include-email)',
-                            //
-                            'COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)',
-                            'IMAGE_TAG=${COMMIT_HASH:=latest}'
+
                         ]
                     },
                     build: {
                         commands: [
                             'echo Build started on `date`',
-                            './gradlew bootBuildImage --imageName=$REPOSITORY_URI:latest',
-                            'docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$IMAGE_TAG',
+                            './gradlew bootBuildImage --imageName=$REPOSITORY_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION',
+                            'docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION',
 
                             'echo Pushing Docker Image',
-                            'docker push $REPOSITORY_URI:latest',
-                            'docker push $REPOSITORY_URI:$IMAGE_TAG',
-                            'export imageTag=$REPOSITORY_URI:$IMAGE_TAG',
-                            'echo imageTag=$REPOSITORY_URI:$IMAGE_TAG'
+                            'docker push $REPOSITORY_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION',
+                            'export imageTag=$REPOSITORY_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION',
+                            'echo imageTag=$REPOSITORY_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION'
                         ],
                     },
                     post_build: {
                         commands: [
                             "echo creating imagedefinitions.json dynamically",
 
-                            "printf '[{\"name\":\"" + 'auth-ecr-repository' + "\",\"imageUri\": \"" + appEcrRepo.repositoryUriForTag() + ":latest\"}]' > imagedefinitions.json",
+                            "printf '[{\"name\":\"" + 'auth-repository' + "\",\"imageUri\": \"" + appEcrRepo.repositoryUriForTag() + "$imageTag\"}]' > imagedefinitions.json",
 
                             "echo Build completed on `date`"
                         ]
