@@ -54,12 +54,12 @@ export class AuthPipelineStack extends cdk.Stack {
                         commands: [
                             'echo Build started on `date`',
                             './gradlew bootBuildImage --imageName=$REPOSITORY_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION',
-                            'docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION',
+                            // 'docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION',
 
                             'echo Pushing Docker Image',
                             'docker push $REPOSITORY_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION',
-                            'export imageTag=$REPOSITORY_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION',
-                            'echo imageTag=$REPOSITORY_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION'
+                            'export imageTag=$CODEBUILD_RESOLVED_SOURCE_VERSION',
+                            'echo imageTag=$CODEBUILD_RESOLVED_SOURCE_VERSION'
                         ],
                     },
                     post_build: {
