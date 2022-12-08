@@ -271,8 +271,8 @@ export class AuthEcsAppStack extends cdk.Stack {
         });
 
         container.addPortMappings({
-            containerPort:80,
-            hostPort:80,
+            containerPort:8080,
+            hostPort:8080,
             protocol: ecs.Protocol.TCP,
 
 
