@@ -55,7 +55,7 @@ export class AuthPipelineStack extends cdk.Stack {
                     build: {
                         commands: [
                             'echo Build started on `date`',
-                            './gradlew bootBuildImage --imageName=$REPOSITORY_URI:latest .',
+                            './gradlew bootBuildImage --imageName=$REPOSITORY_URI:latest',
                             'docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$IMAGE_TAG',
 
                             'echo Pushing Docker Image',
