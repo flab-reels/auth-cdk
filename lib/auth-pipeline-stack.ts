@@ -48,20 +48,21 @@ export class AuthPipelineStack extends cdk.Stack {
                             'echo Logging in to Amazon ECR...',
                             '$(aws ecr get-login --region $AWS_DEFAULT_REGION --no-include-email)',
                             //
-                            // 'IMAGE_TAG=${COMMIT_HASH:=latest}',
+                            'COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)',
+                            'IMAGE_TAG=${COMMIT_HASH:=latest}'
                         ]
                     },
                     build: {
                         commands: [
                             'echo Build started on `date`',
-                            './gradlew bootBuildImage --imageName=$REPOSITORY_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION .',
+                            './gradlew bootBuildImage --imageName=$REPOSITORY_URI:latest .',
+                            'docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$IMAGE_TAG',
 
                             'echo Pushing Docker Image',
-
-                            'docker push $REPOSITORY_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION',
-
-                            'export imageTag=$CODEBUILD_RESOLVED_SOURCE_VERSION',
-                            'echo imageTag=$CODEBUILD_RESOLVED_SOURCE_VERSION'
+                            'docker push $REPOSITORY_URI:latest',
+                            'docker push $REPOSITORY_URI:$IMAGE_TAG',
+                            'export imageTag=$REPOSITORY_URI:$IMAGE_TAG',
+                            'echo imageTag=$REPOSITORY_URI:$IMAGE_TAG'
                         ],
                     },
                     post_build: {
