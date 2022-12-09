@@ -247,8 +247,7 @@ export class AuthEcsAppStack extends cdk.Stack {
 
         const vpc = new ec2.Vpc(this, 'Vpc', {
             vpcName:"auth-vpc",
-            natGateways:0,
-            maxAzs:2
+            maxAzs:1
 
         })
 
@@ -259,22 +258,19 @@ export class AuthEcsAppStack extends cdk.Stack {
         })
 
 
-        const taskDefinition = new ecs.FargateTaskDefinition(this, 'TaskDefinition', {
-            family: 'auth-task-definition',
-            cpu: 256,
-            memoryLimitMiB: 512,
+        const taskDefinition = new ecs.TaskDefinition(this, 'TaskDefinition', {
+            cpu: '256',
+            memoryMiB: '512',
+            compatibility:ecs.Compatibility.FARGATE
         });
 
 
         const container = taskDefinition.addContainer('AppContainer', {
             containerName: "auth-container",
             image: props.image,
-
         });
         //
-        container.addPortMappings({
-            containerPort:8080,
-        })
+
 
         // const loadBalancer = new nlbv2.ApplicationLoadBalancer(this, 'auth-nlb',{
         //     loadBalancerName:"auth-nlb",
