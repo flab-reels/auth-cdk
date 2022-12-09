@@ -66,7 +66,7 @@ export class AuthPipelineStack extends cdk.Stack {
                         commands: [
                             "echo creating imagedefinitions.json dynamically",
 
-                            "printf '[{\"name\":\"" + 'auth-repository' + "\",\"imageUri\": \"" + appEcrRepo.repositoryUriForTag() + "$imageTag\"}]' > imagedefinitions.json",
+                            "printf '[{\"name\":\"" + 'auth-repository' + "\",\"imageUri\": \"" + appEcrRepo.repositoryUriForTag() + "`$CODEBUILD_RESOLVED_SOURCE_VERSION`\"}]' > imagedefinitions.json",
 
                             "echo Build completed on `date`"
                         ]
