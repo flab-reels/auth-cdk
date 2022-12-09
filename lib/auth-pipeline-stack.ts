@@ -66,7 +66,7 @@ export class AuthPipelineStack extends cdk.Stack {
                         commands: [
                             "echo creating imagedefinitions.json dynamically",
 
-                            "printf '[{\"name\":\"" + 'auth-repository' + "\",\"imageUri\": \"" + appEcrRepo.repositoryUriForTag() + "`$CODEBUILD_RESOLVED_SOURCE_VERSION`\"}]' > imagedefinitions.json",
+                            "printf '[{\"name\":\"" + 'auth-repository' + "\",\"imageUri\": \"" + appEcrRepo.repositoryUriForTag() + "${CODEBUILD_RESOLVED_SOURCE_VERSION}`\"}]' > imagedefinitions.json",
 
                             "echo Build completed on `date`"
                         ]
@@ -144,10 +144,10 @@ export class AuthPipelineStack extends cdk.Stack {
         const cdkSourceAction = this.createCDKGithubSourceAction(cdkCodeSourceOutput)
 
         new codepipeline.Pipeline(this, 'auth-code-pipeline', {
-            artifactBucket: new s3.Bucket(this, 'ArtifactBucket', {
-                bucketName:'auth-cdk-bucket',
-                removalPolicy: cdk.RemovalPolicy.DESTROY,
-            }),
+            // artifactBucket: new s3.Bucket(this, 'ArtifactBucket', {
+            //     bucketName:'auth-cdk-bucket',
+            //     removalPolicy: cdk.RemovalPolicy.DESTROY,
+            // }),
             pipelineName:"auth-pipeline",
 
             stages: [
@@ -259,26 +259,22 @@ export class AuthEcsAppStack extends cdk.Stack {
         })
 
 
-        // const taskDefinition = new ecs.FargateTaskDefinition(this, 'TaskDefinition', {
-        //     family: 'auth-task-definition',
-        //     cpu: 256,
-        //     memoryLimitMiB: 512,
-        // });
+        const taskDefinition = new ecs.FargateTaskDefinition(this, 'TaskDefinition', {
+            family: 'auth-task-definition',
+            cpu: 256,
+            memoryLimitMiB: 512,
+        });
 
 
-        // const container = taskDefinition.addContainer('AppContainer', {
-        //     containerName: "auth-container",
-        //     image: props.image,
+        const container = taskDefinition.addContainer('AppContainer', {
+            containerName: "auth-container",
+            image: props.image,
+
+        });
         //
-        // });
-        //
-        // container.addPortMappings({
-        //     containerPort:8080,
-        //     hostPort:8080,
-        //     protocol: ecs.Protocol.TCP,
-        //
-        //
-        // })
+        container.addPortMappings({
+            containerPort:8080,
+        })
 
         // const loadBalancer = new nlbv2.ApplicationLoadBalancer(this, 'auth-nlb',{
         //     loadBalancerName:"auth-nlb",
@@ -301,42 +297,17 @@ export class AuthEcsAppStack extends cdk.Stack {
         secGroup.addIngressRule(ec2.Peer.ipv4('0.0.0.0/0'), ec2.Port.tcp(80), 'SSH frm anywhere');
         secGroup.addIngressRule(ec2.Peer.ipv4('0.0.0.0/0'), ec2.Port.tcp(8080), '');
 
-        const fargateService = new aws_ecs_patterns.ApplicationLoadBalancedFargateService(
-            this,
-            'auth-fargate-service',
-            {
-                cluster,
-                desiredCount:2,
-                cpu:256,
-                memoryLimitMiB:512,
-                taskImageOptions:{
-                    image:props.image,
-                    enableLogging:true,
-                    containerPort:80,
-                },
-                publicLoadBalancer:true,
-                securityGroups:[secGroup],
-            }
-        )
 
-        const scaling = fargateService.service.autoScaleTaskCount({
-            maxCapacity: 2,
-        });
-        scaling.scaleOnCpuUtilization('CpuScaling', {
-            targetUtilizationPercent: 50,
-            scaleInCooldown: cdk.Duration.seconds(60),
-            scaleOutCooldown: cdk.Duration.seconds(60),
-        });
 
-        // const fargateService = new ecs.FargateService(this, 'auth-fargate-service', {
-        //     cluster,
-        //     taskDefinition: taskDefinition,
-        //     serviceName: 'auth-fargate-service',
-        //     assignPublicIp:true,
-        //     securityGroups:[
-        //         secGroup
-        //     ]
-        // });
+       new ecs.FargateService(this, 'auth-fargate-service', {
+            cluster,
+            taskDefinition: taskDefinition,
+            serviceName: 'auth-fargate-service',
+            assignPublicIp:true,
+            securityGroups:[
+                secGroup
+            ],
+        });
 
         // listener.addTargets('auth-tg', {
         //     targetGroupName: 'auth-tg',
