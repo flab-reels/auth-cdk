@@ -114,7 +114,7 @@ export class AuthPipelineStack extends cdk.Stack {
                     build: {
                         commands: [
                             // synthesize the CDK code for the ECS application Stack
-                            'npx cdk --version',
+                            // 'npx cdk --version',
                             'npx cdk synth --verbose',
                         ],
                     },
@@ -247,6 +247,8 @@ export class AuthEcsAppStack extends cdk.Stack {
 
         const vpc = new ec2.Vpc(this, 'Vpc', {
             vpcName:"auth-vpc",
+            natGateways:0,
+            maxAzs:2
 
         })
 
