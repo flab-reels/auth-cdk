@@ -312,12 +312,10 @@ export class AuthEcsAppStack extends cdk.Stack {
                     containerPort:80,
 
                 },
-
                 memoryLimitMiB: 512, // Default is 512
                 publicLoadBalancer: true, // Default is false
                 serviceName:'auth-fargate-service',
                 securityGroups:[secGroup],
-                assignPublicIp:true,
                 listenerPort:80,
 
 
