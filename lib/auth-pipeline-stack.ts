@@ -253,11 +253,11 @@ export class AuthEcsAppStack extends cdk.Stack {
             vpc,
             clusterName:"auth-cluster"
         })
-        const fargateTaskDefinition = new ecs.FargateTaskDefinition(this, 'ApiTaskDefinition', {
+        const fargateTaskDefinition = new ecs.FargateTaskDefinition(this, 'AuthFargateDefinition', {
             memoryLimitMiB: 512,
             cpu: 256,
         });
-        const container = fargateTaskDefinition.addContainer("backend", {
+        const container = fargateTaskDefinition.addContainer("AuthServiceContainer", {
             // Use an image from Amazon ECR
             image: props.image,
             // ... other options here ...
@@ -279,7 +279,7 @@ export class AuthEcsAppStack extends cdk.Stack {
         const service = new ecs.FargateService(this, 'Service', {
             cluster,
             taskDefinition: fargateTaskDefinition,
-            desiredCount: 2,
+            desiredCount: 1,
             assignPublicIp: true,
             securityGroups: [secGroup],
 
