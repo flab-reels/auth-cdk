@@ -262,7 +262,7 @@ export class AuthEcsAppStack extends cdk.Stack {
             // ... other options here ...
         });
         container.addPortMappings({
-            containerPort: 80
+            containerPort: 8080
         });
 
 
@@ -278,7 +278,7 @@ export class AuthEcsAppStack extends cdk.Stack {
         const service = new ecs.FargateService(this, 'Service', {
             cluster,
             taskDefinition: fargateTaskDefinition,
-            desiredCount: 2,
+            // desiredCount: 2,
             assignPublicIp: true,
             securityGroups: [secGroup],
 
