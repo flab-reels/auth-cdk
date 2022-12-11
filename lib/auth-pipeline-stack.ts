@@ -6,10 +6,9 @@ import * as codepipeline_actions from 'aws-cdk-lib/aws-codepipeline-actions'
 import * as codebuild from 'aws-cdk-lib/aws-codebuild'
 import * as ecr from 'aws-cdk-lib/aws-ecr'
 import * as ecs from 'aws-cdk-lib/aws-ecs'
+import {Protocol} from 'aws-cdk-lib/aws-ecs'
 import * as ec2 from 'aws-cdk-lib/aws-ec2'
 import {SecurityGroup} from 'aws-cdk-lib/aws-ec2'
-import * as nlbv2 from "aws-cdk-lib/aws-elasticloadbalancingv2"
-import * as s3 from 'aws-cdk-lib/aws-s3'
 
 export class AuthPipelineStack extends cdk.Stack {
     public readonly tagParameterContainerImage: ecs.TagParameterContainerImage;
@@ -64,9 +63,9 @@ export class AuthPipelineStack extends cdk.Stack {
                     },
                     post_build: {
                         commands: [
-                            "echo creating imagedefinitions.json dynamically",
+                            // "echo creating imagedefinitions.json dynamically",
 
-                            "printf '[{\"name\":\"" + 'auth-repository' + "\",\"imageUri\": \"" + appEcrRepo.repositoryUriForTag() + "${CODEBUILD_RESOLVED_SOURCE_VERSION}`\"}]' > imagedefinitions.json",
+                            // "printf '[{\"name\":\"" + 'auth-repository' + "\",\"imageUri\": \"" + appEcrRepo.repositoryUriForTag() + "${CODEBUILD_RESOLVED_SOURCE_VERSION}`\"}]' > imagedefinitions.json",
 
                             "echo Build completed on `date`"
                         ]
@@ -80,11 +79,11 @@ export class AuthPipelineStack extends cdk.Stack {
                 cache: {
                     paths: '/root/.gradle/**/*',
                 },
-                artifacts: {
-                    files: [
-                        "imagedefinitions.json"
-                    ],
-                },
+                // artifacts: {
+                //     files: [
+                //         "imagedefinitions.json"
+                //     ],
+                // },
 
             }),
         });
@@ -257,18 +256,26 @@ export class AuthEcsAppStack extends cdk.Stack {
 
         })
 
+        //
+        // const taskDefinition = new ecs.TaskDefinition(this, 'TaskDefinition', {
+        //     cpu: '256',
+        //     memoryMiB: '512',
+        //     compatibility:ecs.Compatibility.FARGATE
+        // });
 
-        const taskDefinition = new ecs.TaskDefinition(this, 'TaskDefinition', {
-            cpu: '256',
-            memoryMiB: '512',
-            compatibility:ecs.Compatibility.FARGATE
-        });
 
-
-        const container = taskDefinition.addContainer('AppContainer', {
-            containerName: "auth-container",
-            image: props.image,
-        });
+        // const container = taskDefinition.addContainer('AppContainer', {
+        //     containerName: "auth-container",
+        //     image: props.image,
+        // });
+        //
+        // container.addPortMappings(
+        //     {
+        //         hostPort:8080,
+        //         containerPort:8080,
+        //         protocol:Protocol.TCP
+        //     }
+        // )
         //
 
 
@@ -292,18 +299,41 @@ export class AuthEcsAppStack extends cdk.Stack {
 
         secGroup.addIngressRule(ec2.Peer.ipv4('0.0.0.0/0'), ec2.Port.tcp(80), 'SSH frm anywhere');
         secGroup.addIngressRule(ec2.Peer.ipv4('0.0.0.0/0'), ec2.Port.tcp(8080), '');
+        secGroup.addIngressRule(secGroup, ec2.Port.allTraffic())
+
+        new aws_ecs_patterns.ApplicationLoadBalancedFargateService(
+            this,
+            'auth-fargate-service',
+            {
+                cluster: cluster, // Required
+                cpu: 256, // Default is 256
+                desiredCount: 1, // Default is 1
+                taskImageOptions: {
+                    image: props.image,
+                },
+
+                memoryLimitMiB: 512, // Default is 512
+                publicLoadBalancer: true, // Default is false
+                serviceName:'auth-fargate-service',
+                securityGroups:[secGroup],
+                assignPublicIp:true,
+                listenerPort:80,
 
 
 
-       new ecs.FargateService(this, 'auth-fargate-service', {
-            cluster,
-            taskDefinition: taskDefinition,
-            serviceName: 'auth-fargate-service',
-            assignPublicIp:true,
-            securityGroups:[
-                secGroup
-            ],
-        });
+            }
+        )
+
+
+       // new ecs.FargateService(this, 'auth-fargate-service', {
+       //      cluster,
+       //      taskDefinition: taskDefinition,
+       //      serviceName: 'auth-fargate-service',
+       //      assignPublicIp:true,
+       //      securityGroups:[
+       //          secGroup
+       //      ],
+       //  });
 
         // listener.addTargets('auth-tg', {
         //     targetGroupName: 'auth-tg',
