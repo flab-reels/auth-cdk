@@ -53,7 +53,6 @@ export class AuthPipelineStack extends cdk.Stack {
                         commands: [
                             'echo Build started on `date`',
                             './gradlew bootBuildImage --imageName=$REPOSITORY_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION',
-                            // 'docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION',
 
                             'echo Pushing Docker Image',
                             'docker push $REPOSITORY_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION',
@@ -279,7 +278,7 @@ export class AuthEcsAppStack extends cdk.Stack {
         const service = new ecs.FargateService(this, 'Service', {
             cluster,
             taskDefinition: fargateTaskDefinition,
-            desiredCount: 1,
+            desiredCount: 2,
             assignPublicIp: true,
             securityGroups: [secGroup],
 
