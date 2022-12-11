@@ -246,8 +246,6 @@ export class AuthEcsAppStack extends cdk.Stack {
 
         const vpc = new ec2.Vpc(this, 'Vpc', {
             vpcName:"auth-vpc",
-            maxAzs:1
-
         })
 
         const cluster = new ecs.Cluster(this, 'Cluster', {
@@ -307,9 +305,11 @@ export class AuthEcsAppStack extends cdk.Stack {
             {
                 cluster: cluster, // Required
                 cpu: 256, // Default is 256
-                desiredCount: 1, // Default is 1
+                desiredCount: 1, // Default is 1s
                 taskImageOptions: {
                     image: props.image,
+                    containerPort:80,
+
                 },
 
                 memoryLimitMiB: 512, // Default is 512
