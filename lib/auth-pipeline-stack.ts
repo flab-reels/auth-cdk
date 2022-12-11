@@ -245,12 +245,6 @@ export class AuthEcsAppStack extends cdk.Stack {
         super(scope, id, props);
         const vpc = new ec2.Vpc(this, "auth-vpc", {
             vpcName:"auth-vpc",
-            ipAddresses: IpAddresses.cidr("10.1.0.0/16"),
-            natGateways: 1,
-            subnetConfiguration: [
-                {  cidrMask: 24, subnetType: ec2.SubnetType.PUBLIC, name: "Public" },
-                {  cidrMask: 24, subnetType: ec2.SubnetType.PRIVATE_ISOLATED, name: "Private" }
-            ],
             maxAzs: 3 // Default is all AZs in region
         });
 
@@ -286,34 +280,10 @@ export class AuthEcsAppStack extends cdk.Stack {
             cluster,
             taskDefinition: fargateTaskDefinition,
             desiredCount: 2,
-            assignPublicIp: false,
-            securityGroups: [secGroup]
+            assignPublicIp: true,
+            securityGroups: [secGroup],
+
         });
-
-        const scaling = service.autoScaleTaskCount({ maxCapacity: 6, minCapacity: 2 });
-        scaling.scaleOnCpuUtilization('CpuScaling', {
-            targetUtilizationPercent: 50,
-            scaleInCooldown: Duration.seconds(60),
-            scaleOutCooldown: Duration.seconds(60)
-        });
-        const lb = new aws_elasticloadbalancingv2.ApplicationLoadBalancer(this, 'ALB', {
-            vpc,
-            internetFacing: true
-        });
-
-        const listener = lb.addListener('Listener', {
-            port: 80,
-        });
-
-        listener.addTargets('Target', {
-            port: 80,
-            targets: [service],
-            healthCheck: { path: '/health/' }
-        });
-
-
-        listener.connections.allowDefaultPortFromAnyIpv4('Open to the world');
-
 
 
     }
