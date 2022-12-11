@@ -246,6 +246,7 @@ export class AuthEcsAppStack extends cdk.Stack {
 
         const vpc = new ec2.Vpc(this, 'Vpc', {
             vpcName:"auth-vpc",
+            natGateways:0
         })
 
         const cluster = new ecs.Cluster(this, 'Cluster', {

@@ -10,7 +10,9 @@ export class AuthDatabaseStackStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
         super(scope, id, props);
 
-        const vpc = new ec2.Vpc(this, 'auth-db-vpc', {})
+        const vpc = new ec2.Vpc(this, 'auth-db-vpc', {
+            natGateways:0
+        })
 
 
         // 👇 create a security group for the EC2 instance
