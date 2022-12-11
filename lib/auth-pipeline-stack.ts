@@ -318,8 +318,6 @@ export class AuthEcsAppStack extends cdk.Stack {
                 securityGroups:[secGroup],
                 listenerPort:80,
 
-
-
             }
         )
 
