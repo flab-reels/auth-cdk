@@ -278,7 +278,7 @@ export class AuthEcsAppStack extends cdk.Stack {
         const service = new ecs.FargateService(this, 'Service', {
             cluster,
             taskDefinition: fargateTaskDefinition,
-            // desiredCount: 2,
+            desiredCount: 1,
             assignPublicIp: true,
             securityGroups: [secGroup],
 
