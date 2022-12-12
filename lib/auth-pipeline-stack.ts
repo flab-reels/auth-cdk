@@ -244,7 +244,6 @@ export class AuthEcsAppStack extends cdk.Stack {
         super(scope, id, props);
         const vpc = new ec2.Vpc(this, "auth-vpc", {
             vpcName:"auth-vpc",
-            natGateways:1,
             maxAzs: 3 // Default is all AZs in region
         });
 
@@ -263,7 +262,9 @@ export class AuthEcsAppStack extends cdk.Stack {
             // ... other options here ...
         });
         container.addPortMappings({
-            containerPort: 8080
+            containerPort: 80,
+            hostPort: 80
+
         });
 
 
@@ -276,14 +277,13 @@ export class AuthEcsAppStack extends cdk.Stack {
         secGroup.addIngressRule(ec2.Peer.ipv4('0.0.0.0/0'), ec2.Port.tcp(80), 'SSH frm anywhere');
         secGroup.addIngressRule(ec2.Peer.ipv4('0.0.0.0/0'), ec2.Port.tcp(8080), '');
         // secGroup.addIngressRule(secGroup, ec2.Port.allTraffic())
-        const service = new aws_ecs_patterns.ApplicationLoadBalancedFargateService(this, 'Service', {
+        const service = new ecs.FargateService(this, 'Service', {
             cluster,
             taskDefinition: fargateTaskDefinition,
             desiredCount: 1,
+            assignPublicIp: true,
             securityGroups: [secGroup],
-            assignPublicIp:true,
-            publicLoadBalancer:true,
-            listenerPort:8080
+
         });
 
 
