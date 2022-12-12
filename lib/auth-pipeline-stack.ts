@@ -281,7 +281,9 @@ export class AuthEcsAppStack extends cdk.Stack {
             taskDefinition: fargateTaskDefinition,
             desiredCount: 1,
             securityGroups: [secGroup],
-
+            assignPublicIp:true,
+            publicLoadBalancer:true,
+            listenerPort:8080
         });
 
 
