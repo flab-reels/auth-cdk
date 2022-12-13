@@ -8,6 +8,7 @@ import * as ecr from 'aws-cdk-lib/aws-ecr'
 import * as ecs from 'aws-cdk-lib/aws-ecs'
 import {Protocol} from 'aws-cdk-lib/aws-ecs'
 import * as ec2 from 'aws-cdk-lib/aws-ec2'
+import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager'
 import {IpAddresses, SecurityGroup} from 'aws-cdk-lib/aws-ec2'
 
 export class AuthPipelineStack extends cdk.Stack {
@@ -242,6 +243,20 @@ export interface EcsAppStackProps extends cdk.StackProps {
 export class AuthEcsAppStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props: EcsAppStackProps) {
         super(scope, id, props);
+        const dbPw = new secretsmanager.Secret(this,'auth-db-secret',{
+            secretStringValue:SecretValue.secretsManager('auth-db-pw')
+        })
+        const googleSecret = new secretsmanager.Secret(this,'google-secret',{
+            secretStringValue:SecretValue.secretsManager('google_reels')
+        })
+        const facebookSecret = new secretsmanager.Secret(this,'facebook-secret',{
+            secretStringValue:SecretValue.secretsManager('facebook_reels')
+        })
+        const naverSecret = new secretsmanager.Secret(this,'naver-secret',{
+            secretStringValue:SecretValue.secretsManager('naver_reels')
+        })
+
+
 
 
         const vpc = new ec2.Vpc(this, "auth-vpc", {
@@ -265,12 +280,13 @@ export class AuthEcsAppStack extends cdk.Stack {
             environment:{
                 'databaseUrl': 'jdbc:mysql://auth-user.cj8dzd5oyawf.ap-northeast-2.rds.amazonaws.com:3306/user?serverTimezone=Asia/Seoul&characterEncoding=UTF-8',
                 'databaseUser': 'admin',
-                'databasePassword' : SecretValue.secretsManager('auth-db-pw').toString(),
-                'googleSecret': SecretValue.secretsManager('google_reels').toString(),
-                'naverSecret': SecretValue.secretsManager('naver_reels').toString(),
-                'facebookSecret': SecretValue.secretsManager('facebook_reels').toString(),
-
             },
+            secrets : {
+                'databasePassword' : ecs.Secret.fromSecretsManager(dbPw),
+                'googleSecret': ecs.Secret.fromSecretsManager(googleSecret),
+                'naverSecret': ecs.Secret.fromSecretsManager(naverSecret),
+                'facebookSecret': ecs.Secret.fromSecretsManager(facebookSecret),
+            }
 
 
             // ... other options here ...
@@ -290,7 +306,7 @@ export class AuthEcsAppStack extends cdk.Stack {
 
         secGroup.addIngressRule(ec2.Peer.ipv4('0.0.0.0/0'), ec2.Port.tcp(80), 'SSH frm anywhere');
         secGroup.addIngressRule(ec2.Peer.ipv4('0.0.0.0/0'), ec2.Port.tcp(8080), '');
-        // secGroup.addIngressRule(secGroup, ec2.Port.allTraffic())
+        // secGroup.addIngressRule(secGroup, ec2.Port.allTraffic))
         const service = new ecs.FargateService(this, 'Service', {
             cluster,
             taskDefinition: fargateTaskDefinition,
