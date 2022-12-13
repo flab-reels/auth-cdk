@@ -242,6 +242,8 @@ export interface EcsAppStackProps extends cdk.StackProps {
 export class AuthEcsAppStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props: EcsAppStackProps) {
         super(scope, id, props);
+
+
         const vpc = new ec2.Vpc(this, "auth-vpc", {
             vpcName:"auth-vpc",
             maxAzs: 3 // Default is all AZs in region
@@ -255,10 +257,22 @@ export class AuthEcsAppStack extends cdk.Stack {
         const fargateTaskDefinition = new ecs.FargateTaskDefinition(this, 'AuthFargateDefinition', {
             memoryLimitMiB: 512,
             cpu: 256,
+
         });
         const container = fargateTaskDefinition.addContainer("AuthServiceContainer", {
             // Use an image from Amazon ECR
             image: props.image,
+            environment:{
+                'databaseUrl': 'jdbc:mysql://auth-user.cj8dzd5oyawf.ap-northeast-2.rds.amazonaws.com:3306/user?serverTimezone=Asia/Seoul&characterEncoding=UTF-8',
+                'databaseUser': 'admin',
+                'databasePassword' : SecretValue.secretsManager('auth-db-pw').toString(),
+                'googleSecret': SecretValue.secretsManager('google_reels').toString(),
+                'naverSecret': SecretValue.secretsManager('naver_reels').toString(),
+                'facebookSecret': SecretValue.secretsManager('facebook_reels').toString(),
+
+            },
+
+
             // ... other options here ...
         });
         container.addPortMappings({
