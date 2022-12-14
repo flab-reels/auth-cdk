@@ -18,7 +18,8 @@ export class AuthPipelineStack extends cdk.Stack {
 
 
         const appEcrRepo = new ecr.Repository(this, 'auth-ecr-repository',{
-            repositoryName:'auth-repository'
+            repositoryName:'auth-repository',
+            removalPolicy: cdk.RemovalPolicy.DESTROY
         });
 
 
@@ -243,21 +244,6 @@ export interface EcsAppStackProps extends cdk.StackProps {
 export class AuthEcsAppStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props: EcsAppStackProps) {
         super(scope, id, props);
-        const dbPw = new secretsmanager.Secret(this,'auth-db-secret',{
-            secretStringValue:SecretValue.secretsManager('auth-db-pw')
-        })
-        const googleSecret = new secretsmanager.Secret(this,'google-secret',{
-            secretStringValue:SecretValue.secretsManager('google_reels')
-        })
-        const facebookSecret = new secretsmanager.Secret(this,'facebook-secret',{
-            secretStringValue:SecretValue.secretsManager('facebook_reels')
-        })
-        const naverSecret = new secretsmanager.Secret(this,'naver-secret',{
-            secretStringValue:SecretValue.secretsManager('naver_reels')
-        })
-
-
-
 
         const vpc = new ec2.Vpc(this, "auth-vpc", {
             vpcName:"auth-vpc",
@@ -277,19 +263,44 @@ export class AuthEcsAppStack extends cdk.Stack {
         const container = fargateTaskDefinition.addContainer("AuthServiceContainer", {
             // Use an image from Amazon ECR
             image: props.image,
+            /** Spring Boot Application.yml
+             * - 환경변수와, Secret값을 넣을 수 있다. 보안상으로 이런식으로 넣으면 Github에 올려도 충분히 보안을 형성 할 수 있다.
+             *
+             * - 스프링 부트 Application.yml 예시
+             *   datasource:
+             *     url: ${databaseUrl}
+             *     username: ${databaseUser}
+             *     password: ${databasePassword}
+             *
+             * - 위와 같이 Scope를 설정해주면 값이 대입이 되어 보안을 유지할 수 있게 된다.
+             */
             environment:{
                 'databaseUrl': 'jdbc:mysql://auth-user.cj8dzd5oyawf.ap-northeast-2.rds.amazonaws.com:3306/user?serverTimezone=Asia/Seoul&characterEncoding=UTF-8',
                 'databaseUser': 'admin',
             },
             secrets : {
-                'databasePassword' : ecs.Secret.fromSecretsManager(dbPw),
-                'googleSecret': ecs.Secret.fromSecretsManager(googleSecret),
-                'naverSecret': ecs.Secret.fromSecretsManager(naverSecret),
-                'facebookSecret': ecs.Secret.fromSecretsManager(facebookSecret),
+                'databasePassword' : ecs.Secret.fromSecretsManager(
+                    new secretsmanager.Secret(this,'auth-db-secret',{
+                    secretStringValue:SecretValue.secretsManager('auth-db-pw')
+                })
+                ),
+                'googleSecret': ecs.Secret.fromSecretsManager(
+                    new secretsmanager.Secret(this,'google-secret',{
+                    secretStringValue:SecretValue.secretsManager('google_reels')
+                })
+                ),
+                'naverSecret': ecs.Secret.fromSecretsManager(
+                    new secretsmanager.Secret(this,'naver-secret',{
+                        secretStringValue:SecretValue.secretsManager('naver_reels')
+                    })
+                ),
+                'facebookSecret': ecs.Secret.fromSecretsManager(
+                    new secretsmanager.Secret(this,'facebook-secret',{
+                    secretStringValue:SecretValue.secretsManager('facebook_reels')
+                })
+                ),
             }
 
-
-            // ... other options here ...
         });
         container.addPortMappings({
             containerPort: 80,
