@@ -10,6 +10,7 @@ import {Protocol} from 'aws-cdk-lib/aws-ecs'
 import * as ec2 from 'aws-cdk-lib/aws-ec2'
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager'
 import {IpAddresses, SecurityGroup} from 'aws-cdk-lib/aws-ec2'
+import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2'
 
 export class AuthPipelineStack extends cdk.Stack {
     public readonly tagParameterContainerImage: ecs.TagParameterContainerImage;
@@ -322,12 +323,24 @@ export class AuthEcsAppStack extends cdk.Stack {
             cluster,
             taskDefinition: fargateTaskDefinition,
             desiredCount: 1,
-            assignPublicIp: true,
             securityGroups: [secGroup],
+            circuitBreaker:{rollback:true}
 
         });
 
+        const loadBalancer = new elbv2.ApplicationLoadBalancer(this, 'Auth-alb',{
+            vpc,
+            internetFacing:true,
 
+        })
+
+        const listener = loadBalancer.addListener('Auth-listener',{
+            port:80
+        })
+        listener.addTargets('Auth-target',{
+            port:80,
+            targets:[service],
+        })
 
     }
 }
