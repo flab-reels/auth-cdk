@@ -324,7 +324,8 @@ export class AuthEcsAppStack extends cdk.Stack {
             taskDefinition: fargateTaskDefinition,
             desiredCount: 1,
             securityGroups: [secGroup],
-            circuitBreaker:{rollback:true}
+            circuitBreaker:{rollback:true},
+
 
         });
 
@@ -335,10 +336,10 @@ export class AuthEcsAppStack extends cdk.Stack {
         })
 
         const listener = loadBalancer.addListener('Auth-listener',{
-            port:80
+            port:8080
         })
         listener.addTargets('Auth-target',{
-            port:80,
+            port:8080,
             targets:[service],
         })
 
