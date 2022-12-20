@@ -304,8 +304,8 @@ export class AuthEcsAppStack extends cdk.Stack {
 
         });
         container.addPortMappings({
-            containerPort: 80,
-            hostPort: 80
+            containerPort: 8080,
+            hostPort: 8080
 
         });
 
@@ -336,12 +336,18 @@ export class AuthEcsAppStack extends cdk.Stack {
         })
 
         const listener = loadBalancer.addListener('Auth-listener',{
-            port:8080
+            port:80,
+            protocol:elbv2.ApplicationProtocol.HTTP
+
         })
         listener.addTargets('Auth-target',{
-            port:8080,
+            port:80,
             targets:[service],
         })
 
+        secGroup.connections.allowFrom(
+            loadBalancer,
+            ec2.Port.tcp(80)
+        )
     }
 }
