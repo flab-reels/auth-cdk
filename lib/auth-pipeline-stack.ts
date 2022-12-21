@@ -330,25 +330,25 @@ export class AuthEcsAppStack extends cdk.Stack {
 
         });
 
-        // const loadBalancer = new elbv2.ApplicationLoadBalancer(this, 'Auth-alb',{
-        //     vpc,
-        //     internetFacing:true,
-        //
-        // })
-        //
-        // const listener = loadBalancer.addListener('Auth-listener',{
-        //     port:80,
-        //     protocol:elbv2.ApplicationProtocol.HTTP
-        //
-        // })
-        // listener.addTargets('Auth-target',{
-        //     port:80,
-        //     targets:[service],
-        // })
-        //
-        // secGroup.connections.allowFrom(
-        //     loadBalancer,
-        //     ec2.Port.tcp(80)
-        // )
+        const loadBalancer = new elbv2.ApplicationLoadBalancer(this, 'Auth-alb',{
+            vpc,
+            internetFacing:true,
+
+        })
+
+        const listener = loadBalancer.addListener('Auth-listener',{
+            port:80,
+            protocol:elbv2.ApplicationProtocol.HTTP
+
+        })
+        listener.addTargets('Auth-target',{
+            port:80,
+            targets:[service],
+        })
+
+        secGroup.connections.allowFrom(
+            loadBalancer,
+            ec2.Port.tcp(80)
+        )
     }
 }
