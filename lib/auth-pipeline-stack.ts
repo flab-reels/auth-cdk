@@ -326,7 +326,7 @@ export class AuthEcsAppStack extends cdk.Stack {
             desiredCount: 1,
             securityGroups: [secGroup],
             circuitBreaker:{rollback:true},
-
+            assignPublicIp:true
 
         });
 
