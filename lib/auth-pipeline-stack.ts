@@ -333,17 +333,19 @@ export class AuthEcsAppStack extends cdk.Stack {
         const loadBalancer = new elbv2.ApplicationLoadBalancer(this, 'Auth-alb',{
             vpc,
             internetFacing:true,
-
+            idleTimeout:Duration.seconds(300)
         })
 
         const listener = loadBalancer.addListener('Auth-listener',{
             port:80,
-            protocol:elbv2.ApplicationProtocol.HTTP
+            protocol:elbv2.ApplicationProtocol.HTTP,
+
 
         })
         listener.addTargets('Auth-target',{
             port:80,
             targets:[service],
+
         })
 
         secGroup.connections.allowFrom(
