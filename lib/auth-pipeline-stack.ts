@@ -258,8 +258,8 @@ export class AuthEcsAppStack extends cdk.Stack {
             clusterName:"auth-cluster"
         })
         const fargateTaskDefinition = new ecs.FargateTaskDefinition(this, 'AuthFargateDefinition', {
-            memoryLimitMiB: 512,
-            cpu: 256,
+            memoryLimitMiB: 1024,
+            cpu: 512,
 
         });
         const container = fargateTaskDefinition.addContainer("AuthServiceContainer", {
@@ -313,6 +313,7 @@ export class AuthEcsAppStack extends cdk.Stack {
 
 
         const secGroup = new SecurityGroup(this, 'auth-sg', {
+            allowAllOutbound:true,
             securityGroupName: "auth-sg",
             vpc:vpc,
         });
@@ -346,12 +347,15 @@ export class AuthEcsAppStack extends cdk.Stack {
         listener.addTargets('Auth-target',{
             port:80,
             targets:[service],
-
+            healthCheck:{
+                interval: Duration.seconds(60),
+                timeout: Duration.seconds(7),
+            }
         })
 
         secGroup.connections.allowFrom(
             loadBalancer,
-            ec2.Port.tcp(80)
+            ec2.Port.allTcp()
         )
     }
 }
