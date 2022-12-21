@@ -348,8 +348,7 @@ export class AuthEcsAppStack extends cdk.Stack {
             port:80,
             targets:[service],
             healthCheck:{
-                interval: Duration.seconds(60),
-                timeout: Duration.seconds(7),
+                path: "/actuator/health"
             }
         })
 
