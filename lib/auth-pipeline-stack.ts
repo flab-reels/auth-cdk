@@ -248,7 +248,8 @@ export class AuthEcsAppStack extends cdk.Stack {
 
         const vpc = new ec2.Vpc(this, "auth-vpc", {
             vpcName:"auth-vpc",
-            maxAzs: 3 // Default is all AZs in region
+            maxAzs: 3, // Default is all AZs in region
+            natGateways:1
         });
 
 
@@ -329,25 +330,25 @@ export class AuthEcsAppStack extends cdk.Stack {
 
         });
 
-        const loadBalancer = new elbv2.ApplicationLoadBalancer(this, 'Auth-alb',{
-            vpc,
-            internetFacing:true,
-
-        })
-
-        const listener = loadBalancer.addListener('Auth-listener',{
-            port:80,
-            protocol:elbv2.ApplicationProtocol.HTTP
-
-        })
-        listener.addTargets('Auth-target',{
-            port:80,
-            targets:[service],
-        })
-
-        secGroup.connections.allowFrom(
-            loadBalancer,
-            ec2.Port.tcp(80)
-        )
+        // const loadBalancer = new elbv2.ApplicationLoadBalancer(this, 'Auth-alb',{
+        //     vpc,
+        //     internetFacing:true,
+        //
+        // })
+        //
+        // const listener = loadBalancer.addListener('Auth-listener',{
+        //     port:80,
+        //     protocol:elbv2.ApplicationProtocol.HTTP
+        //
+        // })
+        // listener.addTargets('Auth-target',{
+        //     port:80,
+        //     targets:[service],
+        // })
+        //
+        // secGroup.connections.allowFrom(
+        //     loadBalancer,
+        //     ec2.Port.tcp(80)
+        // )
     }
 }
