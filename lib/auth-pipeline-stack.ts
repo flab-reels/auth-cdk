@@ -326,14 +326,15 @@ export class AuthEcsAppStack extends cdk.Stack {
             desiredCount: 1,
             securityGroups: [secGroup],
             circuitBreaker:{rollback:true},
-            assignPublicIp:true
+            assignPublicIp:true,
 
         });
 
         const loadBalancer = new elbv2.ApplicationLoadBalancer(this, 'Auth-alb',{
             vpc,
             internetFacing:true,
-            idleTimeout:Duration.seconds(300)
+            idleTimeout:Duration.seconds(300),
+
         })
 
         const listener = loadBalancer.addListener('Auth-listener',{
