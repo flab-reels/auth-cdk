@@ -207,7 +207,7 @@ export class AuthPipelineStack extends cdk.Stack {
             actionName: 'auth-pipeline-github',
             owner: 'flab-reels',
             repo: 'auth',
-            oauthToken: SecretValue.secretsManager('auth-github'),
+            oauthToken: SecretValue.secretsManager('github_source_accesskey'),
             output: sourceOutput,
             branch: 'master', // default: 'master'
         });
@@ -218,7 +218,7 @@ export class AuthPipelineStack extends cdk.Stack {
             actionName: 'auth-pipeline-cdk',
             owner: 'flab-reels',
             repo: 'auth-cdk',
-            oauthToken: SecretValue.secretsManager('auth-github'),
+            oauthToken: SecretValue.secretsManager('github_source_accesskey'),
             output: sourceOutput,
             branch: 'master', // default: 'master'
         });
@@ -277,7 +277,7 @@ export class AuthEcsAppStack extends cdk.Stack {
              * - 위와 같이 Scope를 설정해주면 값이 대입이 되어 보안을 유지할 수 있게 된다.
              */
             environment:{
-                'databaseUrl': 'jdbc:mysql://auth-user.cj8dzd5oyawf.ap-northeast-2.rds.amazonaws.com:3306/user?serverTimezone=Asia/Seoul&characterEncoding=UTF-8',
+                'databaseUrl': 'jdbc:mysql://auth-user.c8rfpvihe7gd.ap-northeast-2.rds.amazonaws.com:3306/auth?serverTimezone=Asia/Seoul&characterEncoding=UTF-8',
                 'databaseUser': 'admin',
                 'facebookClientId':'1175640313043216',
                 'naverClientId':'UbTn1oyNc2ddhpxcUdKQ',
@@ -291,17 +291,17 @@ export class AuthEcsAppStack extends cdk.Stack {
                 ),
                 'googleSecret': ecs.Secret.fromSecretsManager(
                     new secretsmanager.Secret(this,'google-secret',{
-                    secretStringValue:SecretValue.secretsManager('google_reels')
+                    secretStringValue:SecretValue.secretsManager('google_auth')
                 })
                 ),
                 'naverSecret': ecs.Secret.fromSecretsManager(
                     new secretsmanager.Secret(this,'naver-secret',{
-                        secretStringValue:SecretValue.secretsManager('naver_reels')
+                        secretStringValue:SecretValue.secretsManager('naver_auth')
                     })
                 ),
                 'facebookSecret': ecs.Secret.fromSecretsManager(
                     new secretsmanager.Secret(this,'facebook-secret',{
-                    secretStringValue:SecretValue.secretsManager('facebook_reels')
+                    secretStringValue:SecretValue.secretsManager('facebook_auth')
                 })
                 ),
             }

@@ -9,8 +9,4 @@ const authPipelineStack = new AuthPipelineStack(app, 'AuthPipelineStack')
 new AuthEcsAppStack(app, 'AuthEcsStackDeployedInPipeline', {
     image: authPipelineStack.tagParameterContainerImage,
 });
-// new AuthDatabaseStackStack(app, 'AuthDataBaseStack',{
-//     env:{
-//         account: '788675236515',
-//         region:'ap-northeast-2'
-//     }})
+new AuthDatabaseStackStack(app, 'AuthDataBaseStack')
