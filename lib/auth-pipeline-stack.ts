@@ -279,6 +279,9 @@ export class AuthEcsAppStack extends cdk.Stack {
             environment:{
                 'databaseUrl': 'jdbc:mysql://auth-user.cj8dzd5oyawf.ap-northeast-2.rds.amazonaws.com:3306/user?serverTimezone=Asia/Seoul&characterEncoding=UTF-8',
                 'databaseUser': 'admin',
+                'facebookClientId':'1175640313043216',
+                'naverClientId':'UbTn1oyNc2ddhpxcUdKQ',
+                'googleClientId':'354098202531-cm8qe3s9g2jcjjg5naa3afdc4fv7fqh7.apps.googleusercontent.com',
             },
             secrets : {
                 'databasePassword' : ecs.Secret.fromSecretsManager(
